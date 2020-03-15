@@ -1,0 +1,45 @@
+int main(int argc, char** argv){
+    /* store positive and negative examples */
+    vector<int> positiveSet;
+    vector<int> negativeSet;
+
+    /* init seed */
+    int initseed;
+    if(argc < 2){
+        initseed = time(NULL);
+    }
+    else {
+        initseed = atoi(argv[2]);
+    }
+
+    string outputFileName = "out.data";
+    ofstream ofs(outputFileName, ofstream::out | ofstream::binary);
+    if(ofs){
+        /* init random, in (-100, 100) */
+        //TODO: how to set the random distribution
+        default_random_engine e(initseed);
+        uniform_int_distribution<int> u(-100, 100);
+        while(positiveSet.size() <= 10 || negativeSet.size() <= 10) {
+            int data = u(e);
+            vector<int>::iterator it = find(positiveSet.begin(), positiveSet.end(), data);
+            if(it != positiveSet.end()) continue;
+            it = find(negativeSet.begin(), negativeSet.end(), data);
+            if(it != negativeSet.end()) continue;
+            int positive = TestIfSatisfyPre(data);
+            if(positive == 1) GetPositive(data, positiveSet);
+            else GetNegative(data, negativeSet);
+        }
+        
+        /* output example to file */
+        for(size_t i = 0;i < positiveSet.size();i++){
+            ofs << "1 : " << positiveSet[i] << endl;
+        }
+        for(size_t i = 0;i < negativeSet.size();i++){
+            ofs << "-1 : " << negativeSet[i] << endl;
+        }
+        ofs.close();
+    }
+    else
+        cerr << "Cannot open output file: " << outputFileName << endl;
+    return 0;
+}
