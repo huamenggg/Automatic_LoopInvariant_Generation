@@ -1,0 +1,25 @@
+int main(int argc, char** argv){
+    /* store positive and negative examples */
+    vector<Node*> positiveSet;
+    vector<Node*> negativeSet;
+
+    string outputFileName = "out.ds";
+
+    /* init output file name */
+    if(argc < 2);
+    else if(argc == 2){
+        outputFileName = string(argv[1]);
+    }
+    else{
+        cerr << "More parameters" << endl;
+        exit(0);
+    }
+
+    ofstream ofs(outputFileName, ofstream::out | ofstream::binary);
+    if(ofs){
+        /* init random, in (-100, 100) */
+        //TODO: how to set the random distribution
+
+        srand((int)time(0));
+        while(positiveSet.size() <= 10 || negativeSet.size() <= 10) {
+            Node *p = new Node;

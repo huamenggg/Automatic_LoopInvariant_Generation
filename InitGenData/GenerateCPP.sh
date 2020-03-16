@@ -7,73 +7,146 @@ bold="\e[1m"
 
 DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
-if [ $# -lt 2 ]; then
-	echo "GenerateCPP needs more parameters"
-	echo "sh GenerateCPP.sh build_dir config_file"
-	echo "try it again..."
-	exit 1
+BUILD=$DIR_PROJECT
+CONFIG_FILE=$DIR_PROJECT"/01.cfg"
+PREFIX="01"
+
+if [ $# -ge 1 ]; then
+    $BUILD=$1
+else
+    if [ $# -ge 2 ]; then
+        $CONFIG_FILE=$2
+    else
+        if [ $# -eq 3 ]; then
+            $PREFIX=$3
+        else
+            if [ $# -ne 0 ]; then
+                echo -e $red"GenerateCpp.sh can't accept more than 3 paramters"$normal
+                exit 1
+            fi
+        fi
+    fi
 fi
 
-BUILD=$1
-CONFIG_FILE=$2
+CPPFILE=$BUILD"/"$PREFIX".cpp"
+HEAD=$DIR_PROJECT"/Head"
+MAINHEAD=$DIR_PROJECT"/MainHead"
+MAINMEDIUM=$DIR_PROJECT"/MainMedium"
+MAINTAIL=$DIR_PROJECT"/MainTail"
+VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+VARNUM=${#VARIABLES[@]}
 
-CPPFILE=$BUILD"/InitGen.cpp"
-INIT_DIR=$DIR_PROJECT"/InitGenData"
-HEAD=$INIT_DIR"/Head"
-MAIN=$INIT_DIR"/Main"
-
-if [ -f $1 ]; then
+if [ -f $CPPFILE ]; then
     rm $CPPFILE
 fi
 
 cat $HEAD >> $CPPFILE
 
+#---------------------------------------------
+## Struct Defination
+#---------------------------------------------
+printf "\nstruct Node{\n" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\tint %s;\n" $i >> $CPPFILE
+done
+printf "\tbool operator == (const Node &e){\n\t\t return " >> $CPPFILE
+for (( i=0; i<${VARNUM}-1; i++  ));
+do
+    printf "(this->%s == e.%s) && " ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+done
+printf "(this->%s == e.%s);\n\t}\n};\n\n" ${VARIABLES[(( $VARNUM - 1 ))]} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+
+
+#---------------------------------------------
 ## Test PreCondition function
+#---------------------------------------------
 ##TODO: if variables are more than one
-printf "\nint TestIfSatisfyPre(int aData) {\n\tint " >> $CPPFILE
-VARIABLE=$(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2 )
-printf %s $VARIABLE >> $CPPFILE
-printf " = aData;\n\tif(" >> $CPPFILE
+printf "int TestIfSatisfyPre(Node* aNode) {\n" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\tint %s = aNode->%s;\n" $i $i >> $CPPFILE
+done
+printf "\n\tif(" >> $CPPFILE
 PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 printf %s $PRECONDITION >> $CPPFILE
 printf ") return 1;\n\treturn -1;\n}\n\n" >> $CPPFILE
 
+
+#---------------------------------------------
 ## Test PostCondition function
+#---------------------------------------------
 ##TODO: if variables are more than one
-printf "int TestIfSatisfyPost(int aData) {\n\tint " >> $CPPFILE
-printf %s $VARIABLE >> $CPPFILE
-printf " = aData;\n\tif(" >> $CPPFILE
+printf "int TestIfSatisfyPost(Node* aNode) {\n" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\tint %s = aNode->%s;\n" $i $i >> $CPPFILE
+done
+printf "\n\tif(" >> $CPPFILE
 POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
 printf %s $POSTCONDITION >> $CPPFILE
 printf ") return 1;\n\treturn -1;\n}\n\n" >> $CPPFILE
 
-## Generate positive example
-printf "void GetPositive(int aData, vector<int>& aPositive) {\n\tint begin = aPositive.size();\n\taPositive.push_back(aData);\n\n\tint " >> $CPPFILE
+
+#---------------------------------------------
+## Execute the loop
+#---------------------------------------------
+printf "Node* DoWhile(Node *aNode, vector<Node*>& aSet) {\n" >> $CPPFILE
 printf %s $VARIABLE >> $CPPFILE
-printf " = aData;\n\n\twhile(" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\tint %s = aNode->%s;\n" $i $i >> $CPPFILE
+done
+printf "\n\tNode *_p;\n\twhile(" >> $CPPFILE
 LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
-printf %s $LOOPCONDITION >> $CPPFILE
+printf "%s" $LOOPCONDITION >> $CPPFILE
 printf "){\n\t\t" >> $CPPFILE
 LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
-printf %s $LOOP >> $CPPFILE
-printf "\n\t\tvector<int>::iterator it = find(aPositive.begin(), aPositive.end(), x);\n\t\tif(it == aPositive.end()) {\n\t\t\taPositive.push_back(x);\n\t\t}\n\t}\n\n" >> $CPPFILE
+echo $LOOP >> $CPPFILE
+printf "\n\t\t_p = new Node;\n" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\t\t_p->%s = %s;\n" $i $i >> $CPPFILE
+done
+printf "\n\t\tvector<Node*>::iterator it = find(aSet.begin(), aSet.end(), _p);\n\t\tif(it == aSet.end()) {\n\t\t\taSet.push_back(_p);\n\t\t}\n\t}\n\treturn _p;\n}\n\n" >> $CPPFILE
 
-printf "\tif(TestIfSatisfyPost(" >> $CPPFILE
-printf %s $VARIABLE >> $CPPFILE
-printf ") == -1) {\n\t\taPositive.erase(aPositive.begin() + begin, aPositive.end());\n\t}\n}\n\n" >> $CPPFILE
 
+#---------------------------------------------
+## Generate positive example
+#---------------------------------------------
+printf "void GetPositive(Node *aNode, vector<Node*>& aPositive) {\n\tint begin = aPositive.size();\n\taPositive.push_back(aNode);\n\n" >> $CPPFILE
+printf "\tNode *p = DoWhile(aNode, aPositive);\n" >> $CPPFILE
+printf "\tif(TestIfSatisfyPost(p) == -1) {\n\t\taPositive.erase(aPositive.begin() + begin, aPositive.end());\n\t}\n}\n\n" >> $CPPFILE
+
+
+#---------------------------------------------
 ## Generate negative example
-printf "void GetNegative(int aData, vector<int>& aNegative) {\n\tint begin = aNegative.size();\n\taNegative.push_back(aData);\n\n\tint " >> $CPPFILE
-printf %s $VARIABLE >> $CPPFILE
-printf " = aData;\n\n\twhile(" >> $CPPFILE
-printf %s $LOOPCONDITION >> $CPPFILE
-printf "){\n\t\t" >> $CPPFILE
-printf %s $LOOP >> $CPPFILE
-printf "\n\t\tvector<int>::iterator it = find(aNegative.begin(), aNegative.end(), x);\n\t\tif(it == aNegative.end()) {\n\t\t\taNegative.push_back(x);\n\t\t}\n\t}\n\n" >> $CPPFILE
+#---------------------------------------------
+printf "void GetNegative(Node* aNode, vector<Node*>& aNegative) {\n\tint begin = aNegative.size();\n\taNegative.push_back(aNode);\n\n" >> $CPPFILE
+printf "\tNode *p = DoWhile(aNode, aNegative);\n" >> $CPPFILE
+printf "\tif(TestIfSatisfyPost(p) == 1) {\n\t\taNegative.erase(aNegative.begin() + begin, aNegative.end());\n\t}\n}\n\n" >> $CPPFILE
 
-printf "\tif(TestIfSatisfyPost(" >> $CPPFILE
-printf %s $VARIABLE >> $CPPFILE
-printf ") == 1) {\n\t\taNegative.erase(aNegative.begin() + begin, aNegative.end());\n\t}\n}\n\n" >> $CPPFILE
 
+#---------------------------------------------
 ## Cat main function
-cat $MAIN >> $CPPFILE
+#---------------------------------------------
+cat $MAINHEAD >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\t\t\tp->%s = (rand() %% 201 ) - 100;\n" $i >> $CPPFILE
+done
+printf "\n" >> $CPPFILE
+cat $MAINMEDIUM >> $CPPFILE
+for (( i=0; i<${VARNUM}-1; i++  ));
+do
+    printf "\t\t\tofs << positiveSet[i]->%s << \";\";\n" ${VARIABLES[$i]} >> $CPPFILE
+done
+printf "\t\t\tofs << positiveSet[i]->%s << endl;\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+
+printf "\t\t}\n\t\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\t\tofs << \"-1 : \";\n" >> $CPPFILE
+for (( i=0; i<${VARNUM}-1; i++  ));
+do
+    printf "\t\t\tofs << negativeSet[i]->%s << \";\";\n" ${VARIABLES[$i]} >> $CPPFILE
+done
+printf "\t\t\tofs << negativeSet[i]->%s << endl;\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+cat $MAINTAIL >> $CPPFILE

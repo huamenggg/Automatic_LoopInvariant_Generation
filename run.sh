@@ -19,12 +19,22 @@ if [ ! -f $1 ]; then
 	exit 1
 fi
 
-CON_FIGFILE=$1
-BUILD=$DIR_PROJECT"/Build"
+CONFIG_FILE=$1
+PREFIX=`basename -s .cfg $1`
+BUILD=$DIR_PROJECT"/Build/"$PREFIX
 mkdir -p $BUILD
 
 ##########################################################################
-# BEGINNING
+# Convert config file to cpp, compile it and generate init data.
 ##########################################################################
-echo $blue"Converting the given config file to a cplusplus file..."$normal
-sh InitGenData/GenerateCPP.sh $BUILD $CON_FIGFILE
+echo -e $blue"Converting the given config file to a cplusplus file..."$normal
+./InitGenData/GenerateCPP.sh $BUILD $CONFIG_FILE $PREFIX
+echo -e $green"[Done]"$normal
+
+CPPFILE=$PREFIX".cpp"
+EXEFILE=$PREFIX
+INIT_DATA=$PREFIX".ds"
+echo -e $blue"Compile the cplusplus file and get the initial data"$normal
+cd $BUILD
+g++ $CPPFILE -o $EXEFILE
+./$EXEFILE $INIT_DATA
