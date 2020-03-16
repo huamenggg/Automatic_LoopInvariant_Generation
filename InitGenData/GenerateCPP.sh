@@ -7,27 +7,14 @@ bold="\e[1m"
 
 DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
-BUILD=$DIR_PROJECT
-CONFIG_FILE=$DIR_PROJECT"/01.cfg"
-PREFIX="01"
-
-if [ $# -ge 1 ]; then
-    $BUILD=$1
-else
-    if [ $# -ge 2 ]; then
-        $CONFIG_FILE=$2
-    else
-        if [ $# -eq 3 ]; then
-            $PREFIX=$3
-        else
-            if [ $# -ne 0 ]; then
-                echo -e $red"GenerateCpp.sh can't accept more than 3 paramters"$normal
-                exit 1
-            fi
-        fi
-    fi
+if [ $# -lt 3 ]; then
+    echo -e $red"GenerateCpp.sh needs more parameters"$normal
+    echo -e $red"./GenerateCpp.sh build config_file prefix"$normal
 fi
 
+BUILD=$1
+CONFIG_FILE=$2
+PREFIX=$3
 CPPFILE=$BUILD"/"$PREFIX".cpp"
 HEAD=$DIR_PROJECT"/Head"
 MAINHEAD=$DIR_PROJECT"/MainHead"
@@ -97,6 +84,9 @@ for i in "${VARIABLES[@]}"
 do
     printf "\tint %s = aNode->%s;\n" $i $i >> $CPPFILE
 done
+BEFORELOOP=$(cat $CONFIG_FILE | grep "beforeloop@" | cut -d"@" -f 2)
+printf "\t" >> $CPPFILE
+echo $BEFORELOOP >> $CPPFILE
 printf "\n\tNode *_p;\n\twhile(" >> $CPPFILE
 LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
 printf "%s" $LOOPCONDITION >> $CPPFILE
