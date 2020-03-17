@@ -1,7 +1,7 @@
 int main(int argc, char** argv){
     /* store positive and negative examples */
-    vector<Node*> positiveSet;
-    vector<Node*> negativeSet;
+    vector<Node> positiveSet;
+    vector<Node> negativeSet;
 
     string outputFileName = "out.ds";
 

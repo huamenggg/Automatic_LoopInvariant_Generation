@@ -1,6 +1,6 @@
-            vector<Node*>::iterator it = find(positiveSet.begin(), positiveSet.end(), p);
+            vector<Node>::iterator it = find(positiveSet.begin(), positiveSet.end(), *p);
             if(it != positiveSet.end()) continue;
-            it = find(negativeSet.begin(), negativeSet.end(), p);
+            it = find(negativeSet.begin(), negativeSet.end(), *p);
             if(it != negativeSet.end()) continue;
             int positive = TestIfSatisfyPre(p);
             if(positive == 1) GetPositive(p, positiveSet);
@@ -9,4 +9,4 @@
         
         /* output example to file */
         for(size_t i = 0;i < positiveSet.size();i++){
-            ofs << "1 : ";
+            ofs << "+1 ";

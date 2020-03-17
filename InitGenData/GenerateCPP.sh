@@ -78,7 +78,7 @@ printf ") return 1;\n\treturn -1;\n}\n\n" >> $CPPFILE
 #---------------------------------------------
 ## Execute the loop
 #---------------------------------------------
-printf "Node* DoWhile(Node *aNode, vector<Node*>& aSet) {\n" >> $CPPFILE
+printf "Node* DoWhile(Node *aNode, vector<Node>& aSet) {\n" >> $CPPFILE
 printf %s $VARIABLE >> $CPPFILE
 for i in "${VARIABLES[@]}"
 do
@@ -98,13 +98,13 @@ for i in "${VARIABLES[@]}"
 do
     printf "\t\t_p->%s = %s;\n" $i $i >> $CPPFILE
 done
-printf "\n\t\tvector<Node*>::iterator it = find(aSet.begin(), aSet.end(), _p);\n\t\tif(it == aSet.end()) {\n\t\t\taSet.push_back(_p);\n\t\t}\n\t}\n\treturn _p;\n}\n\n" >> $CPPFILE
+printf "\n\t\tvector<Node>::iterator it = find(aSet.begin(), aSet.end(), *_p);\n\t\tif(it == aSet.end()) {\n\t\t\taSet.push_back(*_p);\n\t\t}\n\t}\n\treturn _p;\n}\n\n" >> $CPPFILE
 
 
 #---------------------------------------------
 ## Generate positive example
 #---------------------------------------------
-printf "void GetPositive(Node *aNode, vector<Node*>& aPositive) {\n\tint begin = aPositive.size();\n\taPositive.push_back(aNode);\n\n" >> $CPPFILE
+printf "void GetPositive(Node *aNode, vector<Node>& aPositive) {\n\tint begin = aPositive.size();\n\taPositive.push_back(*aNode);\n\n" >> $CPPFILE
 printf "\tNode *p = DoWhile(aNode, aPositive);\n" >> $CPPFILE
 printf "\tif(TestIfSatisfyPost(p) == -1) {\n\t\taPositive.erase(aPositive.begin() + begin, aPositive.end());\n\t}\n}\n\n" >> $CPPFILE
 
@@ -112,7 +112,7 @@ printf "\tif(TestIfSatisfyPost(p) == -1) {\n\t\taPositive.erase(aPositive.begin(
 #---------------------------------------------
 ## Generate negative example
 #---------------------------------------------
-printf "void GetNegative(Node* aNode, vector<Node*>& aNegative) {\n\tint begin = aNegative.size();\n\taNegative.push_back(aNode);\n\n" >> $CPPFILE
+printf "void GetNegative(Node* aNode, vector<Node>& aNegative) {\n\tint begin = aNegative.size();\n\taNegative.push_back(*aNode);\n\n" >> $CPPFILE
 printf "\tNode *p = DoWhile(aNode, aNegative);\n" >> $CPPFILE
 printf "\tif(TestIfSatisfyPost(p) == 1) {\n\t\taNegative.erase(aNegative.begin() + begin, aNegative.end());\n\t}\n}\n\n" >> $CPPFILE
 
@@ -129,14 +129,14 @@ printf "\n" >> $CPPFILE
 cat $MAINMEDIUM >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\t\tofs << positiveSet[i]->%s << \";\";\n" ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\t\tofs << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\t\tofs << positiveSet[i]->%s << endl;\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\t\tofs << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 
 printf "\t\t}\n\t\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\t\tofs << \"-1 : \";\n" >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\t\tofs << negativeSet[i]->%s << \";\";\n" ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\t\tofs << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\t\tofs << negativeSet[i]->%s << endl;\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\t\tofs << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 cat $MAINTAIL >> $CPPFILE
