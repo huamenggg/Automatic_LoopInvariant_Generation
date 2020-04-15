@@ -15,7 +15,6 @@ void GenerateSample(const vector<double> &w, double b, ofstream &outputFile) {
     vector<int> result;
     for(int i = 0;i < size - 1;i++) {
         int temp = (rand() % 201) - 100;
-        cout << temp << endl;
         result.push_back(temp);
     }
 

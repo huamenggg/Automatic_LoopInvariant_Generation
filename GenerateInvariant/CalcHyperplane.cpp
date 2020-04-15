@@ -70,13 +70,9 @@ int main(int argc, char** argv){
     int size = alpha[0].size();
     for(int i = 0;i < size;i++){
         double result = 0;
-        cout << i << " : ";
         for(int j = 0;j < coefficient.size();j++){
-            cout << coefficient[j] << "*" << alpha[j][i]
-                << "=" << coefficient[j] * alpha[j][i] << " ";
             result += coefficient[j] * alpha[j][i];
         }
-        cout << endl;
         outputFile << result << endl;
     }
 

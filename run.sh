@@ -38,3 +38,12 @@ echo -e $blue"Compile the cplusplus file and get the initial data"$normal
 cd $BUILD
 g++ $CPPFILE -o $EXEFILE
 ./$EXEFILE $INIT_DATA
+echo -e $green"[Done]"$normal
+cd $DIR_PROJECT
+
+##########################################################################
+# Generate Loop Invariant.
+##########################################################################
+echo -e $blue"Generating Loop Invariant..."$normal
+./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX
+echo -e $green"[Done]"$normal
