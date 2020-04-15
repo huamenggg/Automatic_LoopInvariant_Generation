@@ -133,7 +133,7 @@ do
 done
 printf "\t\t\tofs << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 
-printf "\t\t}\n\t\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\t\tofs << \"-1 : \";\n" >> $CPPFILE
+printf "\t\t}\n\t\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\t\tofs << \"-1 \";\n" >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
     printf "\t\t\tofs << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
