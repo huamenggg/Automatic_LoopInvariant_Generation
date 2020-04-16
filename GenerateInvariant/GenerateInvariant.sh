@@ -48,11 +48,16 @@ g++ CalcHyperplane.cpp -o calcHyperplane
 g++ PredictNode.cpp -o predictNode
 cd $DIR_PROJECT
 
+EXTRACT_CONFIG="InitGenData/ExtractConfig.sh"
+ADD_BORDER_CPP=$BUILD"/"$PREFIX"_addBorder.cpp"
+./EXTRACT_CONFIG $BUILD $CONFIG_FILE $ADD_BORDER_CPP
+
+cd $BUILD
+
 CALC_HYPERPLANE="../../GenerateInvariant/calcHyperplane"
 PREDICT_NODE="../../GenerateInvariant/predictNode"
 SVM_TRAIN="../../libsvm-3.24/svm-train"
 
-cd $BUILD
 ###################################################
 # Initial Iteration
 ###################################################
