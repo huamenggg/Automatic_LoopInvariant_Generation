@@ -23,7 +23,7 @@ void GenerateSample(const vector<double> &w, double b, ofstream &outputFile) {
         sum += w[i] * result[i];
     }
     double x_n = (-b - sum) / w[size - 1];
-    int x_n_int = (int)x_n;
+    int x_n_int = floor(x_n);
     if(x_n - x_n_int < 0.5) {
         result.push_back(x_n_int);
     }

@@ -11,11 +11,8 @@ OutputHyperplane() {
     configFile=$2
     variables=($(cat $configFile | grep "names@" | cut -d"@" -f 2))
     varnum=${#variables[@]}
-    echo $variables
     b=$(sed -n '1p' $hyperplaneFile)
-    parameters=$(sed -n '2,$p' $hyperplaneFile)
-    echo $parameters
-    echo $b
+    parameters=($(sed -n '2,$p' $hyperplaneFile))
     for (( i=0; i<$varnum; i++ ));
     do
         echo -n -e $bold"${parameters[$i]} * ${variables[$i]} + "$normal
