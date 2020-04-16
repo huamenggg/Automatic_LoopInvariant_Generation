@@ -53,7 +53,7 @@ PREDICT_NODE="../../GenerateInvariant/predictNode"
 SVM_TRAIN="../../libsvm-3.24/svm-train"
 
 cd $BUILD
-#################################################
+###################################################
 # Initial Iteration
 ###################################################
 echo -e $red"-----------------svm-learner 1-------------------"$normal
@@ -73,4 +73,56 @@ echo -e $blue"Predict border node according to the model..."$normal
 SVM_PREDICT=$PREFIX".predict"
 ./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
 echo -e $green"[Done]"$normal
-echo -e $red"---------------svm-learner end-----------------"$normal
+
+SVM_BEFORE=$PREFIX".before"
+echo " " >> $SVM_BEFORE
+
+###################################################
+# Generation Interation
+###################################################
+iterator=2
+diff $SVM_BEFORE $SVM_PARAMETER > /dev/null
+IF_FILE_SAME=$?
+echo -n -e $blue"Checking convergence..."$normal
+if [[ $IF_FILE_SAME == 0 ]]; then
+    echo -e $yellow"[True]"$normal
+else
+    echo -e $yellow"[False]"$normal
+fi
+
+while [[ $IF_FILE_SAME != 0 ]]
+do
+    cp $SVM_PARAMETER $SVM_BEFORE
+    # Add border node into DATA_FILE
+
+    # Delete original generated file
+    rm $SVM_MODEL
+    rm $SVM_PARAMETER
+    rm $SVM_PREDICT
+
+    # Begin the next iteration
+    echo -e $red"-----------------svm-learner $iterator-------------------"$normal
+    echo -e $blue"Using libsvm-3.24 to train the model..."$normal
+    ./$SVM_TRAIN -t 0 $DATA_FILE 1>/dev/null 2>&1
+    echo -e $green"[Done]"$normal
+
+    echo -e $blue"Calculating Hyperplane of the model..."$normal
+    ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
+    echo -e $green"[Done]"$normal
+    echo -n -e $yellow"The hyperplane is : "$normal
+    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE
+
+    echo -e $blue"Predict border node according to the model..."$normal
+    ./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
+    echo -e $green"[Done]"$normal
+    let iterator++
+    diff $SVM_BEFORE $SVM_PARAMETER > /dev/null
+    IF_FILE_SAME=$?
+    echo -n -e $blue"Checking convergence..."$normal
+    if [[ $IF_FILE_SAME == 0 ]]; then
+        echo -e $yellow"[True]"$normal
+    else
+        echo -e $yellow"[False]"$normal
+    fi
+
+done
