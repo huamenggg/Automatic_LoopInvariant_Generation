@@ -45,5 +45,4 @@ cd $DIR_PROJECT
 # Generate Loop Invariant.
 ##########################################################################
 echo -e $blue"Generating Loop Invariant..."$normal
-./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX
-echo -e $green"[Done]"$normal
+./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
