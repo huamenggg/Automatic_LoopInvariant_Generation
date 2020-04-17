@@ -1,0 +1,39 @@
+vector<string> Split(const string& in, const string& delim) {
+    regex re{ delim };
+    return vector<string> {
+        sregex_token_iterator(in.begin(), in.end(), re, -1),
+            sregex_token_iterator()
+    };
+}
+
+int main(int argc, char** argv) {
+    if(argc < 3) {
+        cerr << "Generate add border cpp needs more parameter." << endl;
+        cerr << "./generate src_file dst_file" << endl;
+        exit(0);
+    }
+
+    /* store positive and negative examples */
+    vector<Node> positiveSet;
+    vector<Node> negativeSet;
+
+    ifstream inFile;
+    ofstream outFile;
+    inFile.open(argv[1], ios::out | ios::in);
+    outFile.open(argv[2], ios::out);
+    if(!inFile) {
+        cerr << "Can't open " << argv[1] << endl;
+        exit(-1);
+    }
+    if(!outFile) {
+        cerr << "Can't open " << argv[2] << endl;
+        exit(-1);
+    }
+
+    string line;
+    while(getline(inFile, line)) {
+        vector<string> res = Split(line, " ");
+        Node *p = new Node;
+        // give Node variable
+        // p->x = res[0];
+        // p->y = res[1];

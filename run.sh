@@ -22,6 +22,9 @@ fi
 CONFIG_FILE=$1
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
+if [ -d $BUILD ]; then
+    rm $BUILD -rf
+fi
 mkdir -p $BUILD
 
 ##########################################################################
