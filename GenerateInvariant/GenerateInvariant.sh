@@ -6,6 +6,14 @@ blue="\e[34m"
 normal="\e[0m"
 bold="\e[1m"
 
+OutputBorerNode() {
+    nodeFile=$1
+    while read line
+    do
+        echo -n -e $yellow" [$line] "$normal
+    done < $nodeFile
+    printf "\n"
+}
 OutputHyperplane() {
     hyperplaneFile=$1
     configFile=$2
@@ -48,11 +56,41 @@ g++ CalcHyperplane.cpp -o calcHyperplane
 g++ PredictNode.cpp -o predictNode
 cd $DIR_PROJECT
 
+####################################################
+# Generate config file to cpp and compile
+####################################################
 EXTRACT_CONFIG="InitGenData/ExtractConfig.sh"
 ADD_BORDER_CPP=$BUILD"/"$PREFIX"_addBorder.cpp"
-#./EXTRACT_CONFIG $BUILD $CONFIG_FILE $ADD_BORDER_CPP
+ADD_BORDER_HEAD=$GEN_PROJECT"/MainHead"
+ADD_BORDER_MEDIUM=$GEN_PROJECT"/MainMedium"
+ADD_BORDER_TAIL=$GEN_PROJECT"/MainTail"
+./$EXTRACT_CONFIG $BUILD $CONFIG_FILE $ADD_BORDER_CPP
+cat $ADD_BORDER_HEAD >> $ADD_BORDER_CPP
+VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+VARNUM=${#VARIABLES[@]}
+for (( i=0; i<$VARNUM; i++ ));
+do
+    printf "\t\tp->%s = stoi(res[%d]);\n" ${VARIABLES[$i]} $i >> $ADD_BORDER_CPP
+done
+cat $ADD_BORDER_MEDIUM >> $ADD_BORDER_CPP
+# Output variabl number to file
+for (( i=0; i<${VARNUM}-1; i++  ));
+do
+    printf "\t\toutFile << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+done
+printf "\t\toutFile << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 
+printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\toutFile << \"-1 \";\n" >> $ADD_BORDER_CPP
+for (( i=0; i<${VARNUM}-1; i++  ));
+do
+    printf "\t\toutFile << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+done
+printf "\t\toutFile << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
+cat $ADD_BORDER_TAIL >> $ADD_BORDER_CPP
 cd $BUILD
+
+ADD_BORDER_EXE=$PREFIX"_addBorder"
+g++ $ADD_BORDER_CPP -o $ADD_BORDER_EXE
 
 CALC_HYPERPLANE="../../GenerateInvariant/calcHyperplane"
 PREDICT_NODE="../../GenerateInvariant/predictNode"
@@ -80,6 +118,7 @@ SVM_PREDICT=$PREFIX".predict"
 echo -e $green"[Done]"$normal
 
 SVM_BEFORE=$PREFIX".before"
+SVM_NEWNODE=$PREFIX".newnode"
 echo " " >> $SVM_BEFORE
 
 ###################################################
@@ -99,11 +138,17 @@ while [[ $IF_FILE_SAME != 0 ]]
 do
     cp $SVM_PARAMETER $SVM_BEFORE
     # Add border node into DATA_FILE
+    echo -n -e $blue"Adding new border node into data file..."$normal
+    ./$ADD_BORDER_EXE $SVM_PREDICT $SVM_NEWNODE
+    OutputBorerNode $SVM_NEWNODE
+    cat $SVM_NEWNODE >> $DATA_FILE
+    echo -e $green"[Done]"$normal
 
     # Delete original generated file
     rm $SVM_MODEL
     rm $SVM_PARAMETER
     rm $SVM_PREDICT
+    rm $SVM_NEWNODE
 
     # Begin the next iteration
     echo -e $red"-----------------svm-learner $iterator-------------------"$normal
@@ -129,5 +174,6 @@ do
     else
         echo -e $yellow"[False]"$normal
     fi
-
 done
+
+cd $DIR_PROJECT

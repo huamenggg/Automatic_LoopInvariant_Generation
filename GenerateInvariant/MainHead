@@ -35,5 +35,3 @@ int main(int argc, char** argv) {
         vector<string> res = Split(line, " ");
         Node *p = new Node;
         // give Node variable
-        // p->x = res[0];
-        // p->y = res[1];
