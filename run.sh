@@ -30,14 +30,14 @@ mkdir -p $BUILD
 ##########################################################################
 # Convert config file to cpp, compile it and generate init data.
 ##########################################################################
-echo -e $blue"Converting the given config file to a cplusplus file..."$normal
+echo -e $blue$bold$bold"Converting the given config file to a cplusplus file..."$normal$normal
 ./InitGenData/GenerateCPP.sh $BUILD $CONFIG_FILE $PREFIX
 echo -e $green"[Done]"$normal
 
 CPPFILE=$PREFIX".cpp"
 EXEFILE=$PREFIX
 INIT_DATA=$PREFIX".ds"
-echo -e $blue"Compile the cplusplus file and get the initial data"$normal
+echo -e $blue$bold"Compile the cplusplus file and get the initial data"$normal$normal
 cd $BUILD
 g++ $CPPFILE -o $EXEFILE
 ./$EXEFILE $INIT_DATA
@@ -47,5 +47,10 @@ cd $DIR_PROJECT
 ##########################################################################
 # Generate Loop Invariant.
 ##########################################################################
-echo -e $blue"Generating Loop Invariant..."$normal
+echo -e $blue$bold"Generating Loop Invariant..."$normal$normal
 ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+
+##########################################################################
+# Generate Loop Invariant.
+##########################################################################
+./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE

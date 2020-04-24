@@ -35,7 +35,7 @@ if [ $# -lt 3 ]; then
 	exit 1
 fi
 
-DIR_PROJECT=$(cd $(dirname BASH_SOURCE[0]) && pwd)
+DIR_PROJECT=$(pwd)
 GEN_PROJECT=$DIR_PROJECT"/GenerateInvariant"
 BUILD=$1
 PREFIX=$2
