@@ -22,6 +22,8 @@ fi
 BUILD=$1
 PREFIX=$2
 CONFIG_FILE=$3
+IFS_OLD=$IFS
+IFS=$'\n'
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
 
 if [ ! -f $INVARIANT_FILE ]; then
@@ -32,13 +34,14 @@ fi
 VERIFY1=$PREFIX"_verify1.c"
 VERIFY2=$PREFIX"_verify2.c"
 VERIFY3=$PREFIX"_verify3.c"
-INVARIANT=$(cat $INVARIANT_FILE)
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+INVARIANT="$(cat $INVARIANT_FILE | sed -n '1p')"
 PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
 BEFORELOOP=$(cat $CONFIG_FILE | grep "beforeloop@" | cut -d"@" -f 2)
 LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
 LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
+IFS=$IFS_OLD
+VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
 
 ##############################################################
@@ -60,12 +63,15 @@ echo "#include <klee/klee.h>" >> $VERIFY3
 
 #Verify1: test if exits pre && !invariant
 printf "\nvoid get_flag(" >> $VERIFY1
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "int %s, " $i >> $VERIFY1
 done
+IFS=$'\n'
 printf "int flag1) {\n\tif(!(%s)){\n\t\tflag1 = 1;\n\t}\n\telse {\n\t\tflag1 = 0;\n\t}\n}" $INVARIANT >> $VERIFY1
 printf "\n\nint main() {\n\tint " >> $VERIFY1
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY1
@@ -75,22 +81,28 @@ for i in "${VARIABLES[@]}"
 do
     printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" $i $i $i >> $VERIFY1
 done
+IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY1
 printf "\tklee_assume( (%s) );\n\tget_flag(" $PRECONDITION >> $VERIFY1
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY1
 done
+IFS=$'\n'
 printf "flag1);\n\treturn 0;\n}" >> $VERIFY1
 
 #Verify2: test if exits sp(condition && invariant) && !invariant
 printf "\nvoid get_flag(" >> $VERIFY2
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "int %s, " $i >> $VERIFY2
 done
+IFS=$'\n'
 printf "int flag1) {\n\tif(!(%s)){\n\t\tflag1 = 1;\n\t}\n\telse {\n\t\tflag1 = 0;\n\t}\n}" $INVARIANT >> $VERIFY2
 printf "\n\nint main() {\n\tint " >> $VERIFY2
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY2
@@ -100,24 +112,30 @@ for i in "${VARIABLES[@]}"
 do
     printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" $i $i $i >> $VERIFY2
 done
+IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY2
 printf "\tklee_assume( (%s) );\n\tklee_assume( (" $INVARIANT >> $VERIFY2
 echo -e -n $LOOPCONDITION >> $VERIFY2
 printf ") );\n\tdo {\n\t\t%s\n\t} while(0);\n\n\tget_flag(" $LOOP >> $VERIFY2
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY2
 done
+IFS=$'\n'
 printf "flag1);\n\treturn 0;\n}" >> $VERIFY2
 
 #Verify3: test if exits invariant && !condition && !post
 printf "\nvoid get_flag(" >> $VERIFY3
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "int %s, " $i >> $VERIFY3
 done
+IFS=$'\n'
 printf "int flag1) {\n\tif(!(%s)){\n\t\tflag1 = 1;\n\t}\n\telse {\n\t\tflag1 = 0;\n\t}\n}" $POSTCONDITION >> $VERIFY3
 printf "\n\nint main() {\n\tint " >> $VERIFY3
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY3
@@ -127,8 +145,10 @@ for i in "${VARIABLES[@]}"
 do
     printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" $i $i $i >> $VERIFY3
 done
+IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY3
 printf "\tklee_assume( (%s) );\n\tklee_assume( !(%s) );\n\n\tget_flag(" $INVARIANT $POSTCONDITION >> $VERIFY3
+IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
     printf "%s, " $i >> $VERIFY3

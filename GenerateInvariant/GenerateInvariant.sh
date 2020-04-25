@@ -17,15 +17,21 @@ OutputBorerNode() {
 OutputHyperplane() {
     hyperplaneFile=$1
     configFile=$2
+    invariantFile=$3
+    if [ -f $invariantFile ]; then
+        rm $invariantFile
+    fi
     variables=($(cat $configFile | grep "names@" | cut -d"@" -f 2))
     varnum=${#variables[@]}
     b=$(sed -n '1p' $hyperplaneFile)
     parameters=($(sed -n '2,$p' $hyperplaneFile))
     for (( i=0; i<$varnum; i++ ));
     do
-        echo -n -e $bold"${parameters[$i]} * ${variables[$i]} + "$normal
+        echo -n -e "${parameters[$i]} * ${variables[$i]} + " >> $invariantFile
     done
-    echo -e $bold"$b = 0"$normal
+    echo -e "$b = 0" >> $invariantFile
+    invariant=$(sed -n '1p' $invariantFile)
+    echo -e $bold"$invariant"$normal
 }
 
 if [ $# -lt 3 ]; then
@@ -107,10 +113,11 @@ echo -e $green"[Done]"$normal
 echo -e $blue"Calculating Hyperplane of the model..."$normal
 SVM_MODEL=$DATA_FILE".model"
 SVM_PARAMETER=$PREFIX".parameter"
+INVARIANT_FILE=$PREFIX".invariant"
 ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
 echo -e $green"[Done]"$normal
 echo -n -e $yellow"The hyperplane is : "$normal
-OutputHyperplane $SVM_PARAMETER $CONFIG_FILE
+OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE
 
 echo -e $blue"Predict border node according to the model..."$normal
 SVM_PREDICT=$PREFIX".predict"
@@ -160,7 +167,7 @@ do
     ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
     echo -e $green"[Done]"$normal
     echo -n -e $yellow"The hyperplane is : "$normal
-    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE
+    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE
 
     echo -e $blue"Predict border node according to the model..."$normal
     ./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
