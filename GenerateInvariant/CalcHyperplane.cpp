@@ -4,6 +4,7 @@
 #include<iterator>
 #include<regex>
 #include<string>
+#include<vector>
 using namespace std;
 
 vector<string> Split(const string& in, const string& delim) {

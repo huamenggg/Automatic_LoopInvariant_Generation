@@ -18,6 +18,7 @@ OutputHyperplane() {
     hyperplaneFile=$1
     configFile=$2
     invariantFile=$3
+    dataFile=$4
     if [ -f $invariantFile ]; then
         rm $invariantFile
     fi
@@ -29,14 +30,23 @@ OutputHyperplane() {
     do
         echo -n -e "${parameters[$i]} * ${variables[$i]} + " >> $invariantFile
     done
-    echo -e "$b = 0" >> $invariantFile
+    echo -e -n "$b " >> $invariantFile
+    # calculating the symbol of the equation
+    ./../../GenerateInvariant/outputHyperplane $hyperplaneFile $dataFile
+    symbol=$?
+    if [ $symbol -ge 0 ]; then
+        echo -e -n ">=" >> $invariantFile
+    else
+        echo -e -n "<=" >> $invariantFile
+    fi
+    echo -e -n " 0" >> $invariantFile
     invariant=$(sed -n '1p' $invariantFile)
     echo -e $bold"$invariant"$normal
 }
 
 if [ $# -lt 3 ]; then
 	echo "sh GenerateInvariant.sh needs more parameters"
-	echo "sh GenerateInvariant.sh $BUILD $PREFIX"
+	echo "sh GenerateInvariant.sh BUILD PREFIX CONFIG_FILE"
 	echo "try it again..."
 	exit 1
 fi
@@ -55,11 +65,22 @@ fi
 
 # TODO:Compile operation file, could be replaced by make
 # After update the Makefile
+###################################################
+# cd generate directory
+###################################################
 cd $GEN_PROJECT
-rm calcHyperplane
-rm predictNode
-g++ CalcHyperplane.cpp -o calcHyperplane
-g++ PredictNode.cpp -o predictNode
+if [ ! -f calcHyperplane ]; then
+    g++ CalcHyperplane.cpp -o calcHyperplane
+fi
+if [ ! -f perdictNode ]; then
+    g++ PredictNode.cpp -o predictNode
+fi
+if [ ! -f outputHyperplane ]; then
+    g++ OutputHyperplane.cpp -o outputHyperplane
+fi
+###################################################
+# cd project root directory
+###################################################
 cd $DIR_PROJECT
 
 ####################################################
@@ -93,6 +114,10 @@ do
 done
 printf "\t\toutFile << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 cat $ADD_BORDER_TAIL >> $ADD_BORDER_CPP
+
+###################################################
+# cd Build directory
+###################################################
 cd $BUILD
 
 ADD_BORDER_EXE=$PREFIX"_addBorder"
@@ -117,7 +142,7 @@ INVARIANT_FILE=$PREFIX".invariant"
 ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
 echo -e $green"[Done]"$normal
 echo -n -e $yellow"The hyperplane is : "$normal
-OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE
+OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE
 
 echo -e $blue"Predict border node according to the model..."$normal
 SVM_PREDICT=$PREFIX".predict"
@@ -167,7 +192,7 @@ do
     ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
     echo -e $green"[Done]"$normal
     echo -n -e $yellow"The hyperplane is : "$normal
-    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE
+    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE
 
     echo -e $blue"Predict border node according to the model..."$normal
     ./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
@@ -183,4 +208,7 @@ do
     fi
 done
 
+###################################################
+# cd project root directory
+###################################################
 cd $DIR_PROJECT

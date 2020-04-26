@@ -147,7 +147,7 @@ do
 done
 IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY3
-printf "\tklee_assume( (%s) );\n\tklee_assume( !(%s) );\n\n\tget_flag(" $INVARIANT $POSTCONDITION >> $VERIFY3
+printf "\tklee_assume( (%s) );\n\tklee_assume( !(%s) );\n\n\tget_flag(" $INVARIANT $LOOPCONDITION >> $VERIFY3
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
