@@ -1,2 +1,5 @@
 /Build
 /libsvm-3.24
+GenerateInvariant/predictNode
+GenerateInvariant/calcHyperplane
+GenerateInvariant/outputHyperplane
