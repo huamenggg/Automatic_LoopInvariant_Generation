@@ -1,15 +1,16 @@
 #!/bin/bash
 red="\e[31m"
 green="\e[32m"
+yellow="\e[33m"
 blue="\e[34m"
 normal="\e[0m"
 bold="\e[1m"
 
 DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
-if [ $# -lt 1 ]; then
+if [ $# -lt 2 ]; then
 	echo "sh run.sh needs more parameters"
-	echo "sh run.sh config_file"
+	echo "sh run.sh config_file klee_include_path"
 	echo "try it again..."
 	exit 1
 fi
@@ -20,8 +21,10 @@ if [ ! -f $1 ]; then
 fi
 
 CONFIG_FILE=$1
+KLEE_INCLUDE=$2
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
+INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
 if [ -d $BUILD ]; then
     rm $BUILD -rf
 fi
@@ -47,10 +50,68 @@ cd $DIR_PROJECT
 ##########################################################################
 # Generate Loop Invariant.
 ##########################################################################
-echo -e $blue$bold"Generating Loop Invariant..."$normal$normal
+echo "#######################################################"
+echo -e $blue$bold"Generating Loop Invariant...[Times 1]"$normal$normal
 ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+echo -e $green"[Done]"$normal
 
 ##########################################################################
-# Generate Loop Invariant.
+# Verify Invariant.
 ##########################################################################
-./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+echo -e $blue$bold"Verifying Invariant..."$normal$normal
+./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
+echo -e $green"[Done]"$normal
+VERIFY_RESULT=$?
+if [ $VERIFY_RESULT -eq 0 ]; then
+    echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
+    echo -e $gree"[Process Finished]"$normal
+    echo -e $yellow"------------------------------------------------"$normal
+    echo -e -n $yellow"The invariant is : "$normal
+    cat $INVARIANT_FILE
+    echo ""
+    echo -e $yellow"------------------------------------------------"$normal
+    exit 0
+else
+    echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
+    echo -e $blue$bold"Adding new border node into data file..."$normal$normal
+    #add new border node
+    echo "#######################################################"
+fi
+
+ITERATION=2
+while [ $VERIFY_RESULT -ne 0 ]
+do
+    if [ $ITERATION -ge 128 ]; then
+        echo $red$bold"The iteration times are more than 128, end the process"$normal$normal
+        exit -1
+    fi
+    ##########################################################################
+    # Generate Loop Invariant.
+    ##########################################################################
+    echo -e $blue$bold"Generating Loop Invariant...[Times $ITERATION]"$normal$normal
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+    echo -e $green"[Done]"$normal
+
+    ##########################################################################
+    # Verify Invariant.
+    ##########################################################################
+    echo -e $blue$bold"Verifying Invariant..."$normal$normal
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
+    echo -e $green"[Done]"$normal
+    VERIFY_RESULT=$?
+    if [ $VERIFY_RESULT -eq 0 ]; then
+        echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
+        echo -e $gree"[Process Finished]"$normal
+        echo -e $yellow"------------------------------------------------"$normal
+        echo -e -n $yellow"The invariant is :"$normal
+        cat $INVARIANT_FILE
+        echo ""
+        echo -e $yellow"------------------------------------------------"$normal
+        exit 0
+    else
+        echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
+        echo -e $blue$bold"Adding new border node into data file..."$normal$normal
+        #add new border node
+        echo "#######################################################"
+    fi
+done

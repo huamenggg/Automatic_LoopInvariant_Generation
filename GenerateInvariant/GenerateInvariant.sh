@@ -168,6 +168,10 @@ fi
 
 while [[ $IF_FILE_SAME != 0 ]]
 do
+    if [$iterator -ge 128]; then
+        echo $red$bold"The iteration times are more than 128, end the process"$normal$normal
+        exit -1
+    fi
     cp $SVM_PARAMETER $SVM_BEFORE
     # Add border node into DATA_FILE
     echo -n -e $blue"Adding new border node into data file..."$normal

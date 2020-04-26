@@ -7,9 +7,9 @@ bold="\e[1m"
 
 DIR_PROJECT=$(pwd)
 
-if [ $# -lt 3 ]; then
+if [ $# -lt 4 ]; then
 	echo "sh VerifyInvariant.sh needs more parameters"
-	echo "sh VerifyInvariant.sh build prefix config_file"
+	echo "sh VerifyInvariant.sh build prefix config_file klee_include"
 	echo "try it again..."
 	exit 1
 fi
@@ -22,6 +22,7 @@ fi
 BUILD=$1
 PREFIX=$2
 CONFIG_FILE=$3
+KLEE_INCLUDE=$4
 IFS_OLD=$IFS
 IFS=$'\n'
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
@@ -32,8 +33,11 @@ if [ ! -f $INVARIANT_FILE ]; then
 fi
 
 VERIFY1=$PREFIX"_verify1.c"
+VERIFY1BC=$PREFIX"_verify1.bc"
 VERIFY2=$PREFIX"_verify2.c"
+VERIFY2BC=$PREFIX"_verify2.bc"
 VERIFY3=$PREFIX"_verify3.c"
+VERIFY3BC=$PREFIX"_verify3.bc"
 INVARIANT="$(cat $INVARIANT_FILE | sed -n '1p')"
 PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
@@ -46,6 +50,7 @@ VARNUM=${#VARIABLES[@]}
 
 ##############################################################
 # Generate verify klee file
+# cd build directory
 ##############################################################
 cd $BUILD
 if [ -f $VERIFY1 ]; then
@@ -133,7 +138,7 @@ do
     printf "int %s, " $i >> $VERIFY3
 done
 IFS=$'\n'
-printf "int flag1) {\n\tif(!(%s)){\n\t\tflag1 = 1;\n\t}\n\telse {\n\t\tflag1 = 0;\n\t}\n}" $POSTCONDITION >> $VERIFY3
+printf "int flag1) {\n\tif((%s) && !(%s)){\n\t\tflag1 = 1;\n\t}\n\telse {\n\t\tflag1 = 0;\n\t}\n}" $INVARIANT $POSTCONDITION >> $VERIFY3
 printf "\n\nint main() {\n\tint " >> $VERIFY3
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
@@ -147,7 +152,7 @@ do
 done
 IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY3
-printf "\tklee_assume( (%s) );\n\tklee_assume( !(%s) );\n\n\tget_flag(" $INVARIANT $LOOPCONDITION >> $VERIFY3
+printf "\tklee_assume( (%s) );\n\n\tget_flag(" $LOOPCONDITION >> $VERIFY3
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
@@ -155,4 +160,61 @@ do
 done
 printf "flag1);\n\treturn 0;\n}" >> $VERIFY3
 
+##############################################################
+# Using clang and klee to check
+##############################################################
+rm klee* -rf
+KLEE_RESULT_FILE=klee-last/test000001.ktest
+KLEE_RESULT=verify.result
+clang -I $KLEE_INCLUDE -emit-llvm -c $VERIFY1
+klee $VERIFY1BC 1>$KLEE_RESULT 2>&1
+KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
+if [ $KLEE_PATH_NUM -gt 1 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 1"$normal$normal
+    exit -1
+fi
+rm $KLEE_RESULT
+ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
+flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
+if [ $flag -ne 0 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 1"$normal$normal
+    exit -1
+fi
+echo -e $green$bold"Satisfy verification condition 1"$normal$normal
+
+clang -I $KLEE_INCLUDE -emit-llvm -c $VERIFY2
+klee $VERIFY2BC 1>$KLEE_RESULT 2>&1
+KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
+if [ $KLEE_PATH_NUM -gt 1 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 2"$normal$normal
+    exit -1
+fi
+rm $KLEE_RESULT
+ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
+flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
+if [ $flag -ne 0 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 2"$normal$normal
+    exit -1
+fi
+echo -e $green$bold"Satisfy verification condition 2"$normal$normal
+
+clang -I $KLEE_INCLUDE -emit-llvm -c $VERIFY3
+klee $VERIFY3BC 1>$KLEE_RESULT 2>&1
+KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
+if [ $KLEE_PATH_NUM -gt 1 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 3"$normal$normal
+    exit -1
+fi
+rm $KLEE_RESULT
+ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
+flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
+if [ $flag -ne 0 ]; then
+    echo -e $red$bold"Can't satisfy verify condition 3"$normal$normal
+    exit -1
+fi
+echo -e $green$bold"Satisfy verification condition 3"$normal$normal
+
+##############################################################
+# cd project root kkdirectory
+##############################################################
 cd $DIR_PROJECT
