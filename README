@@ -3,3 +3,4 @@ Secondly, needs to install clang and klee.
 Lastly, run ./run.sh Config_file klee_include_path(absolute path)
 
 ##### Because klee_assume can't support double type, the precondition, loopcondition limited to int.
+Because the limitation of shell, the spare space won't allowed

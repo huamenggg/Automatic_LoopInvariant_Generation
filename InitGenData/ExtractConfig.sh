@@ -81,9 +81,9 @@ for i in "${VARIABLES[@]}"
 do
     printf "\tint %s = aNode->%s;\n" $i $i >> $CPPFILE
 done
-BEFORELOOP=$(cat $CONFIG_FILE | grep "beforeloop@" | cut -d"@" -f 2)
+BEFORELOOP=$(cat $CONFIG_FILE | grep "loopbefore@" | cut -d"@" -f 2)
 printf "\t" >> $CPPFILE
-echo $BEFORELOOP >> $CPPFILE
+echo "$BEFORELOOP" >> $CPPFILE
 printf "\n\tNode *_p;\n\twhile(" >> $CPPFILE
 LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
 printf "%s" $LOOPCONDITION >> $CPPFILE
