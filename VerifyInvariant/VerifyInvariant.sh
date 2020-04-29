@@ -5,6 +5,23 @@ blue="\e[34m"
 normal="\e[0m"
 bold="\e[1m"
 
+OutputAssumeCondition() {
+    condition=$1
+    outputfile=$2
+    array=(${condition//&&/ })
+    num=${#array[@]}
+    i=0
+    while [[ $i -lt $num ]]
+    do
+        if [ $[$i+1] -lt $num ]; then
+            printf "\tklee_assume(%s && %s);\n" ${array[$i]} ${array[$[$i+1]]} >> $outputfile
+        else
+            printf "\tklee_assume(%s);\n" ${array[$i]} >> $outputfile
+        fi
+        let i+=2
+    done
+}
+
 DIR_PROJECT=$(pwd)
 
 if [ $# -lt 4 ]; then
@@ -88,7 +105,8 @@ do
 done
 IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY1
-printf "\tklee_assume( (%s) );\n\tget_flag(" $PRECONDITION >> $VERIFY1
+OutputAssumeCondition "$PRECONDITION" $VERIFY1
+printf "\n\tget_flag(" >> $VERIFY1
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
@@ -119,9 +137,8 @@ do
 done
 IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY2
-printf "\tklee_assume( (%s) );\n\tklee_assume( (" $INVARIANT >> $VERIFY2
-echo -e -n $LOOPCONDITION >> $VERIFY2
-printf ") );\n\tdo {\n\t\t%s\n\t} while(0);\n\n\tget_flag(" $LOOP >> $VERIFY2
+OutputAssumeCondition "$LOOPCONDITION" $VERIFY2
+printf "\tdo {\n\t\t%s\n\t} while(0);\n\n\tget_flag(" $LOOP >> $VERIFY2
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
@@ -152,7 +169,8 @@ do
 done
 IFS=$'\n'
 printf "\tklee_make_symbolic(&flag1, sizeof(flag1), \"flag1\");\n" >> $VERIFY3
-printf "\tklee_assume( (%s) );\n\n\tget_flag(" $LOOPCONDITION >> $VERIFY3
+OutputAssumeCondition $LOOPCONDITION $VERIFY3
+printf "\n\tget_flag(" >> $VERIFY3
 IFS=$IFS_OLD
 for i in "${VARIABLES[@]}"
 do
@@ -171,14 +189,14 @@ klee $VERIFY1BC 1>$KLEE_RESULT 2>&1
 KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
 if [ $KLEE_PATH_NUM -gt 1 ]; then
     echo -e $red$bold"Can't satisfy verify condition 1"$normal$normal
-    exit -1
+    exit 1
 fi
 rm $KLEE_RESULT
 ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
 flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
 if [ $flag -ne 0 ]; then
     echo -e $red$bold"Can't satisfy verify condition 1"$normal$normal
-    exit -1
+    exit 1
 fi
 echo -e $green$bold"Satisfy verification condition 1"$normal$normal
 
@@ -187,14 +205,14 @@ klee $VERIFY2BC 1>$KLEE_RESULT 2>&1
 KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
 if [ $KLEE_PATH_NUM -gt 1 ]; then
     echo -e $red$bold"Can't satisfy verify condition 2"$normal$normal
-    exit -1
+    exit 1
 fi
 rm $KLEE_RESULT
 ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
 flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
 if [ $flag -ne 0 ]; then
     echo -e $red$bold"Can't satisfy verify condition 2"$normal$normal
-    exit -1
+    exit 1
 fi
 echo -e $green$bold"Satisfy verification condition 2"$normal$normal
 
@@ -203,14 +221,14 @@ klee $VERIFY3BC 1>$KLEE_RESULT 2>&1
 KLEE_PATH_NUM=$(cat $KLEE_RESULT | grep "generated tests" | cut -d" " -f 6)
 if [ $KLEE_PATH_NUM -gt 1 ]; then
     echo -e $red$bold"Can't satisfy verify condition 3"$normal$normal
-    exit -1
+    exit 1
 fi
 rm $KLEE_RESULT
 ktest-tool $KLEE_RESULT_FILE >> $KLEE_RESULT
 flag=$(tail -3 $KLEE_RESULT | head -n 1 | cut -d" " -f 5)
 if [ $flag -ne 0 ]; then
     echo -e $red$bold"Can't satisfy verify condition 3"$normal$normal
-    exit -1
+    exit 1
 fi
 echo -e $green$bold"Satisfy verification condition 3"$normal$normal
 

@@ -60,8 +60,8 @@ echo -e $green"[Done]"$normal
 ##########################################################################
 echo -e $blue$bold"Verifying Invariant..."$normal$normal
 ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
-echo -e $green"[Done]"$normal
 VERIFY_RESULT=$?
+echo -e $green"[Done]"$normal
 if [ $VERIFY_RESULT -eq 0 ]; then
     echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
     echo -e $gree"[Process Finished]"$normal
@@ -97,8 +97,8 @@ do
     ##########################################################################
     echo -e $blue$bold"Verifying Invariant..."$normal$normal
     ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
-    echo -e $green"[Done]"$normal
     VERIFY_RESULT=$?
+    echo -e $green"[Done]"$normal
     if [ $VERIFY_RESULT -eq 0 ]; then
         echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
         echo -e $gree"[Process Finished]"$normal
@@ -114,4 +114,5 @@ do
         #add new border node
         echo "#######################################################"
     fi
+    let ITERATION++
 done
