@@ -1,5 +1,4 @@
     }
     inFile.close();
-    outFile.close();
     return 0;
 }

@@ -10,7 +10,7 @@
 #define DEBUG
 using namespace std;
 
-void GenerateSample(const vector<double> &w, double b, ofstream &outputFile) {
+void GenerateSample(const vector<double> &w, double b) {
     int size = w.size();
     vector<int> result;
     for(int i = 0;i < size - 1;i++) {
@@ -32,28 +32,22 @@ void GenerateSample(const vector<double> &w, double b, ofstream &outputFile) {
     }
 
     for(int i = 0;i < size;i++){
-       outputFile << result[i] << " "; 
+       cout << result[i] << " ";
     }
-    outputFile << endl;
+    cout << endl;
 }
 
 int main(int argc, char** argv){
-    if(argc < 3) {
+    if(argc < 2) {
         cerr << "PredictNode.cpp needs more paramters" << endl;
         cerr << "./PredictNode input.model.parameter outputname" << endl;
         exit(-1);
     }
 
     ifstream paramFile;
-    ofstream outputFile;
     paramFile.open(argv[1], ios::out | ios::in );
-    outputFile.open(argv[2], ios::out);
     if(!paramFile) {
         cerr << "Can't open " << argv[1] << endl;
-        exit(-1);
-    }
-    if(!outputFile) {
-        cerr << "Can't open " << argv[2] << endl;
         exit(-1);
     }
 
@@ -70,13 +64,12 @@ int main(int argc, char** argv){
         w.push_back(stod(line));
     }
 
-    if(w.size() == 1) GenerateSample(w, b, outputFile);
+    if(w.size() == 1) GenerateSample(w, b);
     else {
     for(int i = 0;i < 5;i++)
-        GenerateSample(w, b, outputFile);
+        GenerateSample(w, b);
     }
 
     paramFile.close();
-    outputFile.close();
     return 0;
 }

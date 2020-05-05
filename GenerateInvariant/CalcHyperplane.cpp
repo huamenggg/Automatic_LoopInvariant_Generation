@@ -16,22 +16,16 @@ vector<string> Split(const string& in, const string& delim) {
 }
 
 int main(int argc, char** argv){
-    if(argc < 3) {
+    if(argc < 2) {
         cerr << "CalcHyperplane.cpp needs more paramters" << endl;
         cerr << "./CalcHyperplane input.model outputname" << endl;
         exit(-1);
     }
 
     ifstream svFile;
-    ofstream outputFile;
     svFile.open(argv[1], ios::out | ios::in );
-    outputFile.open(argv[2], ios::out);
     if(!svFile) {
         cerr << "Can't open " << argv[1] << endl;
-        exit(-1);
-    }
-    if(!outputFile) {
-        cerr << "Can't open " << argv[2] << endl;
         exit(-1);
     }
 
@@ -47,7 +41,7 @@ int main(int argc, char** argv){
     while(getline(svFile, line)){
         vector<string> res = Split(line, " ");
         if(res[0] == "rho") {
-            outputFile << res[1] << endl;;
+            cout << res[1] << endl;;
         }
         else if(res[0] == "SV") {
             isSV = true;
@@ -74,10 +68,9 @@ int main(int argc, char** argv){
         for(int j = 0;j < coefficient.size();j++){
             result += coefficient[j] * alpha[j][i];
         }
-        outputFile << result << endl;
+        cout << result << endl;
     }
 
     svFile.close();
-    outputFile.close();
     return 0;
 }

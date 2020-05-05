@@ -1,7 +1,3 @@
-        }
-        ofs.close();
     }
-    else
-        cerr << "Cannot open output file: " << outputFileName << endl;
     return 0;
 }

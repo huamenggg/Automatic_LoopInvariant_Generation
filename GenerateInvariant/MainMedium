@@ -8,6 +8,6 @@
         else GetNegative(p, negativeSet);
     }
 
-    /* output example to file */
+    /* output example */
     for(size_t i = 0;i < positiveSet.size();i++){
-        outFile << "+1 ";
+        cout << "+1 ";

@@ -7,7 +7,7 @@ vector<string> Split(const string& in, const string& delim) {
 }
 
 int main(int argc, char** argv) {
-    if(argc < 3) {
+    if(argc < 2) {
         cerr << "Generate add border cpp needs more parameter." << endl;
         cerr << "./generate src_file dst_file" << endl;
         exit(0);
@@ -18,15 +18,9 @@ int main(int argc, char** argv) {
     vector<Node> negativeSet;
 
     ifstream inFile;
-    ofstream outFile;
     inFile.open(argv[1], ios::out | ios::in);
-    outFile.open(argv[2], ios::out);
     if(!inFile) {
         cerr << "Can't open " << argv[1] << endl;
-        exit(-1);
-    }
-    if(!outFile) {
-        cerr << "Can't open " << argv[2] << endl;
         exit(-1);
     }
 

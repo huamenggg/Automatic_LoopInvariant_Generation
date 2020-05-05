@@ -14,11 +14,13 @@ OutputBorerNode() {
     done < $nodeFile
     printf "\n"
 }
+
 OutputHyperplane() {
     hyperplaneFile=$1
     configFile=$2
     invariantFile=$3
     dataFile=$4
+    symbolFile=$5
     if [ -f $invariantFile ]; then
         rm $invariantFile
     fi
@@ -36,8 +38,10 @@ OutputHyperplane() {
     symbol=$?
     if [ $symbol -ge 0 ]; then
         echo -e -n ">=" >> $invariantFile
+        echo -e -n ">=" >> $symbolFile
     else
         echo -e -n "<=" >> $invariantFile
+        echo -e -n "<=" >> $symbolFile
     fi
     echo -e -n " 0" >> $invariantFile
     invariant=$(sed -n '1p' $invariantFile)
@@ -103,16 +107,16 @@ cat $ADD_BORDER_MEDIUM >> $ADD_BORDER_CPP
 # Output variabl number to file
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\toutFile << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
 done
-printf "\t\toutFile << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
+printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 
-printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\toutFile << \"-1 \";\n" >> $ADD_BORDER_CPP
+printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\tcout << \"-1 \";\n" >> $ADD_BORDER_CPP
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\toutFile << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
 done
-printf "\t\toutFile << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
+printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 cat $ADD_BORDER_TAIL >> $ADD_BORDER_CPP
 
 ###################################################
@@ -139,14 +143,14 @@ echo -e $blue"Calculating Hyperplane of the model..."$normal
 SVM_MODEL=$DATA_FILE".model"
 SVM_PARAMETER=$PREFIX".parameter"
 INVARIANT_FILE=$PREFIX".invariant"
-./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
+./$CALC_HYPERPLANE $SVM_MODEL >> $SVM_PARAMETER
 echo -e $green"[Done]"$normal
 echo -n -e $yellow"The hyperplane is : "$normal
 OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE
 
 echo -e $blue"Predict border node according to the model..."$normal
 SVM_PREDICT=$PREFIX".predict"
-./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
+./$PREDICT_NODE $SVM_PARAMETER >> $SVM_PREDICT
 echo -e $green"[Done]"$normal
 
 SVM_BEFORE=$PREFIX".before"
@@ -175,7 +179,7 @@ do
     cp $SVM_PARAMETER $SVM_BEFORE
     # Add border node into DATA_FILE
     echo -n -e $blue"Adding new border node into data file..."$normal
-    ./$ADD_BORDER_EXE $SVM_PREDICT $SVM_NEWNODE
+    ./$ADD_BORDER_EXE $SVM_PREDICT >> $SVM_NEWNODE
     OutputBorerNode $SVM_NEWNODE
     cat $SVM_NEWNODE >> $DATA_FILE
     echo -e $green"[Done]"$normal
@@ -193,13 +197,13 @@ do
     echo -e $green"[Done]"$normal
 
     echo -e $blue"Calculating Hyperplane of the model..."$normal
-    ./$CALC_HYPERPLANE $SVM_MODEL $SVM_PARAMETER
+    ./$CALC_HYPERPLANE $SVM_MODEL >> $SVM_PARAMETER
     echo -e $green"[Done]"$normal
     echo -n -e $yellow"The hyperplane is : "$normal
     OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE
 
     echo -e $blue"Predict border node according to the model..."$normal
-    ./$PREDICT_NODE $SVM_PARAMETER $SVM_PREDICT
+    ./$PREDICT_NODE $SVM_PARAMETER >> $SVM_PREDICT
     echo -e $green"[Done]"$normal
     let iterator++
     diff $SVM_BEFORE $SVM_PARAMETER > /dev/null

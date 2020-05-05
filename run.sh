@@ -43,7 +43,7 @@ INIT_DATA=$PREFIX".ds"
 echo -e $blue$bold"Compile the cplusplus file and get the initial data"$normal$normal
 cd $BUILD
 g++ $CPPFILE -o $EXEFILE
-./$EXEFILE $INIT_DATA
+./$EXEFILE >> $INIT_DATA
 echo -e $green"[Done]"$normal
 cd $DIR_PROJECT
 

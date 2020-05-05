@@ -36,20 +36,20 @@ VARNUM=${#VARIABLES[@]}
 cat $MAINHEAD >> $CPPFILE
 for i in "${VARIABLES[@]}"
 do
-    printf "\t\t\tp->%s = (rand() %% 201 ) - 100;\n" $i >> $CPPFILE
+    printf "\t\tp->%s = (rand() %% 201 ) - 100;\n" $i >> $CPPFILE
 done
 printf "\n" >> $CPPFILE
 cat $MAINMEDIUM >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\t\tofs << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\t\tofs << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 
-printf "\t\t}\n\t\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\t\tofs << \"-1 \";\n" >> $CPPFILE
+printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\tcout << \"-1 \";\n" >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\t\tofs << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\t\tofs << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 cat $MAINTAIL >> $CPPFILE
