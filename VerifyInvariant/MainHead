@@ -1,0 +1,5 @@
+#include<iostream>
+#include<z3++.h>
+using namespace z3;
+
+struct Node {

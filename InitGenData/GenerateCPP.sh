@@ -24,6 +24,7 @@ MAINMEDIUM=$DIR_PROJECT"/MainMedium"
 MAINTAIL=$DIR_PROJECT"/MainTail"
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
+PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 
 #---------------------------------------------
 ## Extract function from config file
@@ -31,9 +32,51 @@ VARNUM=${#VARIABLES[@]}
 ./$EXTRACT $BUILD $CONFIG_FILE $CPPFILE
 
 #---------------------------------------------
+## GiveVarValue function
+#---------------------------------------------
+printf "void GiveVarValue(Node *p, z3::func_decl v, z3::model m) {\n\tint val = m.get_const_interp(v).get_numeral_int();\n\tstring name = v.name().str();\n" >> $CPPFILE
+printf "\tif(name == \"%s\") p->%s = val;\n" ${VARIABLES[0]} ${VARIABLES[0]} >> $CPPFILE
+for (( i=1; i<$VARNUM; i++  ));
+do
+    printf "\telse if(name == \"%s\") p->%s = val;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+done
+printf "\telse {\n\t\tcerr << \"There's something wrong in GiveVarValue function\" << endl;\n\t\texit(-1);\n\t}\n}\n\n" >> $CPPFILE
+
+#---------------------------------------------
 ## Cat main function
 #---------------------------------------------
 cat $MAINHEAD >> $CPPFILE
+
+#---------------------------------------------
+# Using SMT to solve the precondition
+#---------------------------------------------
+for i in "${VARIABLES[@]}"
+do
+    printf "\tz3::expr %s = c.int_const(\"%s\");\n" $i $i >> $CPPFILE
+done
+printf "\n\tz3::solver s(c);\n\n\t// precondition\n" >> $CPPFILE
+printf "\ts.add(%s);\n\n" "$PRECONDITION" >> $CPPFILE
+printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tz3::func_decl v = m[0];\n" >> $CPPFILE
+printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+for (( i=1; i<$VARNUM; i++  ));
+do
+    printf "\t\t\tv = m[%d];\n" $i >> $CPPFILE
+    printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+done
+printf "\t\t\tGetPositive(p, positiveSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n\ts.reset();\n\n\t// !precondition\n" >> $CPPFILE
+printf "\ts.add(!(%s));\n\n" "$PRECONDITION" >> $CPPFILE
+printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tz3::func_decl v = m[0];\n" >> $CPPFILE
+printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+for (( i=1; i<$VARNUM; i++  ));
+do
+    printf "\t\t\tv = m[%d];\n" $i >> $CPPFILE
+    printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+done
+printf "\t\t\tGetNegative(p, negativeSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n\tsrand((int)time(0));\n\twhile(positiveSet.size() <= 10 || negativeSet.size() <= 10) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
+
+#---------------------------------------------
+# Using random to add more data
+#---------------------------------------------
 for i in "${VARIABLES[@]}"
 do
     printf "\t\tp->%s = (rand() %% 201 ) - 100;\n" $i >> $CPPFILE

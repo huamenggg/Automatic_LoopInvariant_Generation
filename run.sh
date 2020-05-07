@@ -10,7 +10,7 @@ DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
 if [ $# -lt 2 ]; then
 	echo "sh run.sh needs more parameters"
-	echo "sh run.sh config_file klee_include_path"
+	echo "sh run.sh config_file z3_build_dir"
 	echo "try it again..."
 	exit 1
 fi
@@ -21,7 +21,7 @@ if [ ! -f $1 ]; then
 fi
 
 CONFIG_FILE=$1
-KLEE_INCLUDE=$2
+Z3_BUILD_DIR=$2
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
@@ -42,7 +42,7 @@ EXEFILE=$PREFIX
 INIT_DATA=$PREFIX".ds"
 echo -e $blue$bold"Compile the cplusplus file and get the initial data"$normal$normal
 cd $BUILD
-g++ $CPPFILE -o $EXEFILE
+g++ $CPPFILE -o $EXEFILE -lz3 -L$Z3_BUILD_DIR
 ./$EXEFILE >> $INIT_DATA
 echo -e $green"[Done]"$normal
 cd $DIR_PROJECT
@@ -59,7 +59,7 @@ echo -e $green"[Done]"$normal
 # Verify Invariant.
 ##########################################################################
 echo -e $blue$bold"Verifying Invariant..."$normal$normal
-./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
+./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
 VERIFY_RESULT=$?
 echo -e $green"[Done]"$normal
 if [ $VERIFY_RESULT -eq 0 ]; then
@@ -73,8 +73,8 @@ if [ $VERIFY_RESULT -eq 0 ]; then
     exit 0
 else
     echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
-    echo -e $blue$bold"Adding new border node into data file..."$normal$normal
     #add new border node
+    ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
     echo "#######################################################"
 fi
 
@@ -96,7 +96,7 @@ do
     # Verify Invariant.
     ##########################################################################
     echo -e $blue$bold"Verifying Invariant..."$normal$normal
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $KLEE_INCLUDE
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
     VERIFY_RESULT=$?
     echo -e $green"[Done]"$normal
     if [ $VERIFY_RESULT -eq 0 ]; then
@@ -110,8 +110,8 @@ do
         exit 0
     else
         echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
-        echo -e $blue$bold"Adding new border node into data file..."$normal$normal
         #add new border node
+        ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
         echo "#######################################################"
     fi
     let ITERATION++

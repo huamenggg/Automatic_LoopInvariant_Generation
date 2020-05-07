@@ -1,0 +1,12 @@
+
+    // get result
+    switch(s.check()) {
+        case unsat: return 0; break;
+        case sat: {
+            model m = s.get_model();
+            // traversing the model
+            Node *p = new Node;
+            for (unsigned i = 0; i < m.size(); i++) {
+                func_decl v = m[i];
+                GiveVarValue(p, v, m);
+            }

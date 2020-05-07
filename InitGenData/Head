@@ -6,4 +6,5 @@
 #include<regex>
 #include<vector>
 #include<string>
+#include<z3++.h>
 using namespace std;

@@ -1,0 +1,8 @@
+            return 1;
+            break;
+        }
+        case unknown: return 2;
+        default: return 2;
+    }
+    return 0;
+}

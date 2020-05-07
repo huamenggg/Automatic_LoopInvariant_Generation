@@ -3,6 +3,7 @@ int main(){
     vector<Node> positiveSet;
     vector<Node> negativeSet;
 
-    srand((int)time(0));
-    while(positiveSet.size() <= 10 || negativeSet.size() <= 10) {
-        Node *p = new Node;
+    z3::config cfg;
+    cfg.set("auto_config", true);
+    z3::context c(cfg);
+
