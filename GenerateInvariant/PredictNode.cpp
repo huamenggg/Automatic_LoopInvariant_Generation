@@ -40,7 +40,7 @@ void GenerateSample(const vector<double> &w, double b) {
 int main(int argc, char** argv){
     if(argc < 2) {
         cerr << "PredictNode.cpp needs more paramters" << endl;
-        cerr << "./PredictNode input.model.parameter outputname" << endl;
+        cerr << "./PredictNode input.model.parameter" << endl;
         exit(-1);
     }
 

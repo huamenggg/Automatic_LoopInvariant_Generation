@@ -18,7 +18,7 @@ vector<string> Split(const string& in, const string& delim) {
 int main(int argc, char** argv){
     if(argc < 2) {
         cerr << "CalcHyperplane.cpp needs more paramters" << endl;
-        cerr << "./CalcHyperplane input.model outputname" << endl;
+        cerr << "./CalcHyperplane input.model" << endl;
         exit(-1);
     }
 
@@ -41,7 +41,7 @@ int main(int argc, char** argv){
     while(getline(svFile, line)){
         vector<string> res = Split(line, " ");
         if(res[0] == "rho") {
-            cout << res[1] << endl;;
+            cout << -stod(res[1]) << endl;;
         }
         else if(res[0] == "SV") {
             isSV = true;

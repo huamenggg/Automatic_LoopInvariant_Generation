@@ -75,6 +75,7 @@ else
     echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
     #add new border node
     ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
+    ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
     echo "#######################################################"
 fi
 
@@ -112,6 +113,7 @@ do
         echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
         #add new border node
         ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
+        ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
         echo "#######################################################"
     fi
     let ITERATION++
