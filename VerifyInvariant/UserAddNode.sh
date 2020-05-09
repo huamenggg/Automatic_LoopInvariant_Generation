@@ -81,18 +81,25 @@ cd $BUILD
 if [ -f $USER_INPUT ]; then
     rm $USER_INPUT
 fi
-for i in "${VARIABLES[@]}"
+while [ "$input" == "Y" ];
 do
-    echo -e $blue$bold"Please input $i"$normal$normal
-    read x
-    while [ -z $x ];
+    for i in "${VARIABLES[@]}"
     do
-        echo -e "Need input number"
+        echo -e $blue$bold"Please input $i"$normal$normal
         read x
+        while [ -z $x ];
+        do
+            echo -e "Need input number"
+            read x
+        done
+        echo -n "$x " >> $USER_INPUT
     done
-    echo -n "$x " >> $USER_INPUT
+    printf "\n" >> $USER_INPUT
+    echo -e $yellow$bold"Do you want to add more border node?"$normal$normal
+    echo -e $yellow$bold"[input $red\"Y\"$yellow to add, input $red\"N\"$yellow or other to ignore]"$normal$normal
+    read input
 done
-printf "\n" >> $USER_INPUT
+cat $USER_INPUT
 ./$ADD_BORDER_EXE $USER_INPUT >> $NEW_DATA_FILE
 echo -n -e $blue"Adding new border node into data file..."$normal
 OutputBorderNode $NEW_DATA_FILE
