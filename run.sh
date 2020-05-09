@@ -8,9 +8,9 @@ bold="\e[1m"
 
 DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
-if [ $# -lt 2 ]; then
+if [ $# -lt 3 ]; then
 	echo "sh run.sh needs more parameters"
-	echo "sh run.sh config_file z3_build_dir"
+	echo "sh run.sh config_file z3_build_dir klee_include"
 	echo "try it again..."
 	exit 1
 fi
@@ -22,6 +22,7 @@ fi
 
 CONFIG_FILE=$1
 Z3_BUILD_DIR=$2
+KLEE_INCLUDE=$3
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
@@ -59,7 +60,7 @@ echo -e $green"[Done]"$normal
 # Verify Invariant.
 ##########################################################################
 echo -e $blue$bold"Verifying Invariant..."$normal$normal
-./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
+./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
 VERIFY_RESULT=$?
 echo -e $green"[Done]"$normal
 if [ $VERIFY_RESULT -eq 0 ]; then
@@ -97,7 +98,7 @@ do
     # Verify Invariant.
     ##########################################################################
     echo -e $blue$bold"Verifying Invariant..."$normal$normal
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
     VERIFY_RESULT=$?
     echo -e $green"[Done]"$normal
     if [ $VERIFY_RESULT -eq 0 ]; then
