@@ -15,6 +15,7 @@ GetVerify2Result() {
     klee $verifybc 1>$tempResult 2>&1
     cat $tempResult | grep "KLEE: ERROR:" | grep "klee_assume" 1>/dev/null 2>&1
     if [ $? -eq 0 ]; then
+        rm $tempResult
         return 0
     fi
     rm $tempResult
@@ -22,6 +23,7 @@ GetVerify2Result() {
     kleeData="klee_last/test000001.ktest"
     ktest-tool $kleeData >> $tempResult
     re=($(cat $tempResult | grep " int" | cut -d":" -f 3 | cut -d" " -f2))
+    rm $tempResult
     for i in $re
     do
         printf "%s " $i >> $resultFile
@@ -147,7 +149,10 @@ do
 done
 printf "\tklee_assume(%s);\n" "$LOOPCONDITION" >> $VERIFY2
 printf "\tklee_assume(%s);\n" "$INVARIANT" >> $VERIFY2
-printf "\n\t%s\n" "$LOOP" >> $VERIFY2
+if [[ $LOOPBEFORE != "" ]]; then
+    printf "\t%s\n" "$LOOPBEFORE" >> $VERIFY2
+fi
+printf "\t%s\n" "$LOOP" >> $VERIFY2
 printf "\tklee_assume(!(%s));\n\treturn 0;\n}\n" "$INVARIANT" >> $VERIFY2
 
 #Verify3: test if exits invariant && !condition && !post
@@ -216,6 +221,9 @@ VERIFY_RESULT=$?
 if [ $VERIFY_RESULT -ne 0 ]; then
     echo -e $red$bold"Can't satisfy verify condition 3"$normal$normal
     exit 1
+fi
+if [ -f $VERIFY_RESULT_FILE ]; then
+    rm $VERIFY_RESULT_FILE
 fi
 
 ##############################################################

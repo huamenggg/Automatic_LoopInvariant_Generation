@@ -223,6 +223,7 @@ do
         echo -e $yellow"[False]"$normal
     fi
 done
+rm $SVM_BEFORE
 
 ###################################################
 # cd project root directory
