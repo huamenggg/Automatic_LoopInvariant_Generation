@@ -7,14 +7,18 @@
 #include<random>
 #include<regex>
 #include<string>
-#define DEBUG
+#include<sys/timeb.h>
+#include<vector>
+#include<z3++.h>
 using namespace std;
 
-void GenerateSample(const vector<double> &w, double b) {
+void GenerateSample(const vector<double> &w, double b,
+        default_random_engine &e, uniform_int_distribution<int> &uInt,
+        uniform_real_distribution<double> uDouble) {
     int size = w.size();
     vector<int> result;
     for(int i = 0;i < size - 1;i++) {
-        int temp = (rand() % 201) - 100;
+        int temp = uInt(e);
         result.push_back(temp);
     }
 
@@ -57,17 +61,23 @@ int main(int argc, char** argv){
     // w^T x + b = 0
     double b = stod(line);
 
-    srand((int)time(0));
-
     vector<double> w;
     while(getline(paramFile, line)){
         w.push_back(stod(line));
     }
 
-    if(w.size() == 1) GenerateSample(w, b);
+    struct timeb timeSeed;
+    ftime(&timeSeed);
+
+    unsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;
+    default_random_engine e(mileTime);
+    uniform_int_distribution<int> uInt(-100, 100);
+    uniform_real_distribution<double> uDouble(-100, 100);
+
+    if(w.size() == 1) GenerateSample(w, b, e, uInt, uDouble);
     else {
     for(int i = 0;i < 5;i++)
-        GenerateSample(w, b);
+        GenerateSample(w, b, e, uInt, uDouble);
     }
 
     paramFile.close();

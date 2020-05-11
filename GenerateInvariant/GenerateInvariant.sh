@@ -102,9 +102,14 @@ ADD_BORDER_TAIL=$GEN_PROJECT"/MainTail"
 cat $ADD_BORDER_HEAD >> $ADD_BORDER_CPP
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
+TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
 for (( i=0; i<$VARNUM; i++ ));
 do
-    printf "\t\tp->%s = stoi(res[%d]);\n" ${VARIABLES[$i]} $i >> $ADD_BORDER_CPP
+    if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
+        printf "\t\tp->%s = stoi(res[%d]);\n" ${VARIABLES[$i]} $i >> $ADD_BORDER_CPP
+    else
+        printf "\t\tp->%s = stod(res[%d]);\n" ${VARIABLES[$i]} $i >> $ADD_BORDER_CPP
+    fi
 done
 cat $ADD_BORDER_MEDIUM >> $ADD_BORDER_CPP
 # Output variabl number to file
@@ -181,7 +186,7 @@ fi
 while [[ $IF_FILE_SAME != 0 ]]
 do
     if [ $iterator -ge 128 ]; then
-        echo $red$bold"The iteration times are more than 128, end the process"$normal$normal
+        echo -e $red$bold"The iteration times are more than 128, end the process"$normal$normal
         exit -1
     fi
     cp $SVM_PARAMETER $SVM_BEFORE

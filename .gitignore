@@ -4,6 +4,6 @@ GenerateInvariant/predictNode
 GenerateInvariant/calcHyperplane
 GenerateInvariant/outputHyperplane
 GenerateInvariant/calc.cpp
-GenerateInvariant/calc
+GenerateInvariant/zzz
 TODO.cpp
 temp.sh

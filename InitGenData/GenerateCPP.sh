@@ -7,6 +7,30 @@ bold="\e[1m"
 
 DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
 
+OutputModelValue() {
+    index=$1
+    empty=$2
+    file=$3
+    if [[ ${TYPES[$index]} == "bool" || ${TYPES[$index]} == "int" ]]; then
+        echo -e -n $empty >> $file
+        printf "p->%s = m.get_const_interp(v).get_numeral_int();\n" ${VARIABLES[$index]} >> $file
+    elif [[ ${TYPES[$index]} == "double" ]]; then
+        echo -e -n $empty >> $file
+        printf "string val = m.get_const_interp(v).get_decimal_string(10);\n" >> $file
+        echo -e -n $empty >> $file
+        printf "if(val[val.size() - 1] == '?') {\n" >> $file
+        echo -e -n $empty >> $file
+        printf "\tval = val.substr(0, val.size() - 1);\n" >> $file
+        echo -e -n $empty >> $file
+        printf "}\n" >> $file
+        echo -e -n $empty >> $file
+        printf "p->%s = stod(val);\n" ${VARIABLES[$index]} >> $file
+    else
+        echo $red"The config file type is error, needs to be bool, int or double"$normal
+        exit 1
+    fi
+}
+
 if [ $# -lt 3 ]; then
     echo -e $red"GenerateCpp.sh needs more parameters"$normal
     echo -e $red"./GenerateCpp.sh build config_file prefix"$normal
@@ -24,6 +48,7 @@ MAINMEDIUM=$DIR_PROJECT"/MainMedium"
 MAINTAIL=$DIR_PROJECT"/MainTail"
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
+TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
 PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 
 #---------------------------------------------
@@ -34,13 +59,17 @@ PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
 #---------------------------------------------
 ## GiveVarValue function
 #---------------------------------------------
-printf "void GiveVarValue(Node *p, z3::func_decl v, z3::model m) {\n\tint val = m.get_const_interp(v).get_numeral_int();\n\tstring name = v.name().str();\n" >> $CPPFILE
-printf "\tif(name == \"%s\") p->%s = val;\n" ${VARIABLES[0]} ${VARIABLES[0]} >> $CPPFILE
+printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned i = 0;i < m.size();i++) {\n\t\tz3::func_decl v = m[i];\n\t\tstring name = v.name().str();\n" >> $CPPFILE
+printf "\t\tif(name == \"%s\") {\n" ${VARIABLES[0]} >> $CPPFILE
+OutputModelValue 0 "\t\t\t" $CPPFILE
+printf "\t\t}\n" >> $CPPFILE
 for (( i=1; i<$VARNUM; i++  ));
 do
-    printf "\telse if(name == \"%s\") p->%s = val;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\telse if(name == \"%s\") {\n" ${VARIABLES[$i]} >> $CPPFILE
+    OutputModelValue $i "\t\t\t" $CPPFILE
+    printf "\t\t}\n" >> $CPPFILE
 done
-printf "\telse {\n\t\tcerr << \"There's something wrong in GiveVarValue function\" << endl;\n\t\texit(-1);\n\t}\n}\n\n" >> $CPPFILE
+printf "\t\telse {\n\t\t\tcerr << \"There's something wrong in GiveVarValue function\" << endl;\n\t\t\texit(-1);\n\t\t}\n\t}\n}\n\n" >> $CPPFILE
 
 #---------------------------------------------
 ## Cat main function
@@ -50,36 +79,52 @@ cat $MAINHEAD >> $CPPFILE
 #---------------------------------------------
 # Using SMT to solve the precondition
 #---------------------------------------------
-for i in "${VARIABLES[@]}"
+IS_CONTAIN_DOUBLE=0
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\tz3::expr %s = c.int_const(\"%s\");\n" $i $i >> $CPPFILE
+    if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
+        printf "\tz3::expr %s = c.int_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+    else
+        printf "\tz3::expr %s = c.real_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+        IS_CONTAIN_DOUBLE=1
+    fi
 done
-printf "\n\tz3::solver s(c);\n\n\t// precondition\n" >> $CPPFILE
-printf "\ts.add(%s);\n\n" "$PRECONDITION" >> $CPPFILE
-printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tz3::func_decl v = m[0];\n" >> $CPPFILE
-printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
-for (( i=1; i<$VARNUM; i++  ));
+printf "\n\tz3::solver s(c);\n\n" >> $CPPFILE
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\t\t\tv = m[%d];\n" $i >> $CPPFILE
-    printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+    if [[ ${TYPES[$i]} == "bool" ]]; then
+        printf "\ts.add(%s>=0 && %s<=1);\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+    fi
 done
-printf "\t\t\tGetPositive(p, positiveSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n\ts.reset();\n\n\t// !precondition\n" >> $CPPFILE
-printf "\ts.add(!(%s));\n\n" "$PRECONDITION" >> $CPPFILE
-printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tz3::func_decl v = m[0];\n" >> $CPPFILE
-printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
-for (( i=1; i<$VARNUM; i++  ));
+printf "\t// precondition\n\ts.add(%s);\n\n" "$PRECONDITION" >> $CPPFILE
+printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tGiveVarValue(p, m);\n\t\t\tGetPositive(p, positiveSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n\ts.reset();\n\n" >> $CPPFILE
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\t\t\tv = m[%d];\n" $i >> $CPPFILE
-    printf "\t\t\tGiveVarValue(p, v, m);\n" >> $CPPFILE
+    if [[ ${TYPES[$i]} == "bool" ]]; then
+        printf "\ts.add(%s>=0 && %s<=1);\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
+    fi
 done
-printf "\t\t\tGetNegative(p, negativeSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n\tsrand((int)time(0));\n\twhile(positiveSet.size() <= 10 || negativeSet.size() <= 10) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
+printf "\t// !precondition\n\ts.add(!(%s));\n\n" "$PRECONDITION" >> $CPPFILE
+printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z3::sat: {\n\t\t\tz3::model m = s.get_model();\n\t\t\tNode *p = new Node;\n\t\t\tGiveVarValue(p, m);\n\t\t\tGetNegative(p, negativeSet);\n\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: return -1;break;\n\t}\n\n" >> $CPPFILE
 
 #---------------------------------------------
 # Using random to add more data
 #---------------------------------------------
-for i in "${VARIABLES[@]}"
+printf "\tstruct timeb timeSeed;\n\tftime(&timeSeed);\n\tunsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;\n\tdefault_random_engine e(mileTime);\n\tuniform_int_distribution<int> uInt(-100, 100);\n" >> $CPPFILE
+if [ $IS_CONTAIN_DOUBLE -eq 1 ]; then
+    printf "\tuniform_real_distribution<double> uDouble(-100, 100);\n" >> $CPPFILE
+fi
+printf "\n\twhile(positiveSet.size() <= 10 || negativeSet.size() <= 10) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
+
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\t\tp->%s = (rand() %% 201 ) - 100;\n" $i >> $CPPFILE
+    if [[ ${TYPES[$i]} == "bool" ]]; then
+        printf "\t\tp->%s = abs(uInt(e) %% 2);\n" ${VARIABLES[$i]} >> $CPPFILE
+    elif [[ ${TYPES[$i]} == "int" ]]; then
+        printf "\t\tp->%s = uInt(e);\n" ${VARIABLES[$i]} >> $CPPFILE
+    else
+        printf "\t\tp->%s = uDouble(e);\n" ${VARIABLES[$i]} >> $CPPFILE
+    fi
 done
 printf "\n" >> $CPPFILE
 cat $MAINMEDIUM >> $CPPFILE
