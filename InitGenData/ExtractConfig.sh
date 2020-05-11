@@ -99,7 +99,13 @@ for i in "${VARIABLES[@]}"
 do
     printf "\t\t_p->%s = %s;\n" $i $i >> $CPPFILE
 done
-printf "\n\t\tvector<Node>::iterator it = find(aSet.begin(), aSet.end(), *_p);\n\t\tif(it == aSet.end()) {\n\t\t\taSet.push_back(*_p);\n\t\t}\n\t}\n\treturn _p;\n}\n\n" >> $CPPFILE
+printf "\n\t\tvector<Node>::iterator it = find(aSet.begin(), aSet.end(), *_p);\n\t\tif(it == aSet.end()) {\n\t\t\taSet.push_back(*_p);\n\t\t}\n\t}\n" >> $CPPFILE
+printf "\t_p = new Node;\n" >> $CPPFILE
+for i in "${VARIABLES[@]}"
+do
+    printf "\t_p->%s = %s;\n" $i $i >> $CPPFILE
+done
+printf "\treturn _p;\n}\n\n" >> $CPPFILE
 
 #---------------------------------------------
 ## Generate positive example
