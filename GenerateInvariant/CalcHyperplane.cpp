@@ -36,7 +36,7 @@ int main(int argc, char** argv){
     // is coefficient
     vector<double> coefficient;
     // the remain part of support vector is alpha
-    vector<vector<int>> alpha;
+    vector<vector<double>> alpha;
 
     while(getline(svFile, line)){
         vector<string> res = Split(line, " ");
@@ -49,7 +49,7 @@ int main(int argc, char** argv){
         }
         if(isSV){
             coefficient.push_back(stod(res[0]));
-            vector<int> temp;
+            vector<double> temp;
             for(int i = 1;i < res.size();i++){
                 vector<string> alphaItem = Split(res[i], ":");
                 temp.push_back(stod(alphaItem[1]));
