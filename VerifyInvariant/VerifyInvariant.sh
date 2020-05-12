@@ -186,6 +186,8 @@ cat $MAINTAIL >> $VERIFY1
 
 #Verify2: using klee test if exits sp(condition && invariant) && !invariant
 echo "#include <klee/klee.h>" >> $VERIFY2
+echo "#include <stdio.h>" >> $VERIFY2
+echo "#include <stdbool.h>" >> $VERIFY2
 echo "int main() {" >> $VERIFY2
 for (( i=0; i<$VARNUM; i++  ));
 do

@@ -109,7 +109,7 @@ printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z
 # Using random to add more data
 #---------------------------------------------
 printf "\tstruct timeb timeSeed;\n\tftime(&timeSeed);\n\tunsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;\n\tsrand(mileTime);\n" >> $CPPFILE
-printf "\n\twhile(positiveSet.size() <= 10 || negativeSet.size() <= 10) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
+printf "\n\twhile(positiveSet.empty() || negativeSet.empty()) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
 
 for (( i=0; i<$VARNUM; i++  ));
 do
