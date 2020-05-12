@@ -30,6 +30,30 @@ GetVerify2Result() {
     done
 }
 
+OutputModelValue() {
+    index=$1
+    empty=$2
+    file=$3
+    if [[ ${TYPES[$index]} == "bool" || ${TYPES[$index]} == "int" ]]; then
+        echo -e -n $empty >> $file
+        printf "p->%s = m.get_const_interp(v).get_numeral_int();\n" ${VARIABLES[$index]} >> $file
+    elif [[ ${TYPES[$index]} == "double" ]]; then
+        echo -e -n $empty >> $file
+        printf "std::string val = m.get_const_interp(v).get_decimal_string(10);\n" >> $file
+        echo -e -n $empty >> $file
+        printf "if(val[val.size() - 1] == '?') {\n" >> $file
+        echo -e -n $empty >> $file
+        printf "\tval = val.substr(0, val.size() - 1);\n" >> $file
+        echo -e -n $empty >> $file
+        printf "}\n" >> $file
+        echo -e -n $empty >> $file
+        printf "p->%s = stod(val);\n" ${VARIABLES[$index]} >> $file
+    else
+        echo $red"The config file type is error, needs to be bool, int or double"$normal
+        exit 1
+    fi
+}
+
 DIR_PROJECT=$(pwd)
 
 if [ $# -lt 5 ]; then
@@ -80,6 +104,7 @@ LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
 LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
+TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
 
 ##############################################################
 # Generate verify z3 cpp file
@@ -102,27 +127,47 @@ MAINTAIL="../../VerifyInvariant/MainTail"
 
 #Handle head of the verification file
 cat $MAINHEAD >> $VERIFY1
-for i in "${VARIABLES[@]}"
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\tint %s;\n" $i >> $VERIFY1
+    printf "\t%s %s;\n" ${TYPES[$i]} ${VARIABLES[$i]} >> $VERIFY1
 done
-printf "};\n\nvoid GiveVarValue(Node *p, func_decl v, model m) {\n\tint val = m.get_const_interp(v).get_numeral_int();\n\tstd::string name = v.name().str();\n" >> $VERIFY1
-printf "if(name == \"%s\") p->%s = val;\n" ${VARIABLES[0]} ${VARIABLES[0]} >> $VERIFY1
-for (( i=1; i<$VARNUM; i++ ));
+printf "};\n\n" >> $VERIFY1
+#---------------------------------------------
+## GiveVarValue function
+#---------------------------------------------
+printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned i = 0;i < m.size();i++) {\n\t\tz3::func_decl v = m[i];\n\t\tstd::string name = v.name().str();\n" >> $VERIFY1
+printf "\t\tif(name == \"%s\") {\n" ${VARIABLES[0]} >> $VERIFY1
+OutputModelValue 0 "\t\t\t" $VERIFY1
+printf "\t\t}\n" >> $VERIFY1
+for (( i=1; i<$VARNUM; i++  ));
 do
-    printf "\telse if(name == \"%s\") p->%s = val;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY1
+    printf "\t\telse if(name == \"%s\") {\n" ${VARIABLES[$i]} >> $VERIFY1
+    OutputModelValue $i "\t\t\t" $VERIFY1
+    printf "\t\t}\n" >> $VERIFY1
 done
-printf "\telse {\n\t\tstd::cerr << \"There's something wrong in GiveVarValue function\" << std::endl;\n\t\texit(-1);\n\t}\n}\n\n" >> $VERIFY1
+printf "\t\telse {\n\t\t\tstd::cerr << \"There's something wrong in GiveVarValue function\" << std::endl;\n\t\t\texit(-1);\n\t\t}\n\t}\n}\n\n" >> $VERIFY1
+
 printf "int main() {\n\tconfig cfg;\n\tcfg.set(\"auto_config\", true);\n\tcontext c(cfg);\n" >> $VERIFY1
 
 cat $VERIFY1 >> $VERIFY3
 
 #Verify1: test if exits pre && !invariant
-for i in "${VARIABLES[@]}"
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\texpr %s = c.int_const(\"%s\");\n" $i $i >> $VERIFY1
+    if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
+        printf "\texpr %s = c.int_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY1
+    else
+        printf "\texpr %s = c.real_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY1
+    fi
 done
-printf "\n\tsolver s(c);\n\n\t// precondition\n" >> $VERIFY1
+printf "\n\tsolver s(c);\n\n" >> $VERIFY1
+for (( i=0; i<$VARNUM; i++  ));
+do
+    if [[ ${TYPES[$i]} == "bool" ]]; then
+        printf "\ts.add(%s>=0 && %s<=1);\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY1
+    fi
+done
+printf "\t// precondition\n" >> $VERIFY1
 printf "\ts.add(%s);\n\n\t// !invariant\n" "$PRECONDITION" >> $VERIFY1
 printf "\ts.add(!(" >> $VERIFY1
 for (( i=0; i<$VARNUM; i++ ));
@@ -142,10 +187,10 @@ cat $MAINTAIL >> $VERIFY1
 #Verify2: using klee test if exits sp(condition && invariant) && !invariant
 echo "#include <klee/klee.h>" >> $VERIFY2
 echo "int main() {" >> $VERIFY2
-for i in "${VARIABLES[@]}"
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\tint %s;\n" $i >> $VERIFY2
-    printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" $i $i $i >> $VERIFY2
+    printf "\t%s %s;\n" ${TYPES[$i]} ${VARIABLES[$i]} >> $VERIFY2
+    printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY2
 done
 printf "\tklee_assume(%s);\n" "$LOOPCONDITION" >> $VERIFY2
 printf "\tklee_assume(%s);\n" "$INVARIANT" >> $VERIFY2
@@ -156,11 +201,22 @@ printf "\t%s\n" "$LOOP" >> $VERIFY2
 printf "\tklee_assume(!(%s));\n\treturn 0;\n}\n" "$INVARIANT" >> $VERIFY2
 
 #Verify3: test if exits invariant && !condition && !post
-for i in "${VARIABLES[@]}"
+for (( i=0; i<$VARNUM; i++  ));
 do
-    printf "\texpr %s = c.int_const(\"%s\");\n" $i $i >> $VERIFY3
+    if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
+        printf "\texpr %s = c.int_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY3
+    else
+        printf "\texpr %s = c.real_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY3
+    fi
 done
-printf "\n\tsolver s(c);\n\n\t// invariant\n" >> $VERIFY3
+printf "\n\tsolver s(c);\n\n" >> $VERIFY3
+for (( i=0; i<$VARNUM; i++  ));
+do
+    if [[ ${TYPES[$i]} == "bool" ]]; then
+        printf "\ts.add(%s>=0 && %s<=1);\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY3
+    fi
+done
+printf "\t// invariant\n" >> $VERIFY3
 printf "\ts.add(" >> $VERIFY3
 for (( i=0; i<$VARNUM; i++ ));
 do
