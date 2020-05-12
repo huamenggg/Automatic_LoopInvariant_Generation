@@ -12,13 +12,11 @@
 #include<z3++.h>
 using namespace std;
 
-void GenerateSample(const vector<double> &w, double b,
-        default_random_engine &e, uniform_int_distribution<int> &uInt,
-        uniform_real_distribution<double> uDouble) {
+void GenerateSample(const vector<double> &w, double b) {
     int size = w.size();
     vector<int> result;
     for(int i = 0;i < size - 1;i++) {
-        int temp = uInt(e);
+        int temp = (rand() % 201) - 100;
         result.push_back(temp);
     }
 
@@ -70,14 +68,12 @@ int main(int argc, char** argv){
     ftime(&timeSeed);
 
     unsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;
-    default_random_engine e(mileTime);
-    uniform_int_distribution<int> uInt(-100, 100);
-    uniform_real_distribution<double> uDouble(-100, 100);
+    srand(mileTime);
 
-    if(w.size() == 1) GenerateSample(w, b, e, uInt, uDouble);
+    if(w.size() == 1) GenerateSample(w, b);
     else {
     for(int i = 0;i < 5;i++)
-        GenerateSample(w, b, e, uInt, uDouble);
+        GenerateSample(w, b);
     }
 
     paramFile.close();
