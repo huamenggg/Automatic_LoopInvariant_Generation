@@ -53,7 +53,7 @@ cd $DIR_PROJECT
 ##########################################################################
 echo "#######################################################"
 echo -e $blue$bold"Generating Loop Invariant...[Times 1]"$normal$normal
-./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
 echo -e $green"[Done]"$normal
 
 ##########################################################################
@@ -91,7 +91,7 @@ do
     # Generate Loop Invariant.
     ##########################################################################
     echo -e $blue$bold"Generating Loop Invariant...[Times $ITERATION]"$normal$normal
-    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
     echo -e $green"[Done]"$normal
 
     ##########################################################################

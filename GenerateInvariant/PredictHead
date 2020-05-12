@@ -1,0 +1,47 @@
+#include<algorithm>
+#include<cmath>
+#include<ctime>
+#include<iostream>
+#include<random>
+#include<string>
+#include<sstream>
+#include<sys/timeb.h>
+#include<z3++.h>
+using namespace std;
+
+string Double2String(double d){
+    ostringstream os;
+    if(os << d) return os.str();
+    return "invalid conversion";
+}
+
+double String2Double(string str){
+    istringstream iss(str);
+
+    double  x;
+    if(iss >> x) return x;
+    return 0.0;
+}
+
+int GetIntValue(string num) {
+    if(num[num.size() - 1] == '?') {
+        num = num.substr(0, num.size() - 1);
+    }
+    double temp = String2Double(num);
+    if(temp >= 0) {
+        if(temp - (int)temp >= 0.5) return (int)temp + 1;
+        return (int)temp;
+    }
+    else {
+        if(temp - (int)temp >= -0.5) return (int)temp;
+        return (int)temp - 1;
+    }
+}
+
+double GetDoubleValue(string num) {
+    if(num[num.size() - 1] == '?') {
+        num = num.substr(0, num.size() - 1);
+    }
+    return String2Double(num);
+}
+
