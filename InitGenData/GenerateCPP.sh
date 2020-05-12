@@ -79,14 +79,12 @@ cat $MAINHEAD >> $CPPFILE
 #---------------------------------------------
 # Using SMT to solve the precondition
 #---------------------------------------------
-IS_CONTAIN_DOUBLE=0
 for (( i=0; i<$VARNUM; i++  ));
 do
     if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
         printf "\tz3::expr %s = c.int_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
     else
         printf "\tz3::expr %s = c.real_const(\"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
-        IS_CONTAIN_DOUBLE=1
     fi
 done
 printf "\n\tz3::solver s(c);\n\n" >> $CPPFILE
@@ -110,20 +108,17 @@ printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z
 #---------------------------------------------
 # Using random to add more data
 #---------------------------------------------
-printf "\tstruct timeb timeSeed;\n\tftime(&timeSeed);\n\tunsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;\n\tdefault_random_engine e(mileTime);\n\tuniform_int_distribution<int> uInt(-100, 100);\n" >> $CPPFILE
-if [ $IS_CONTAIN_DOUBLE -eq 1 ]; then
-    printf "\tuniform_real_distribution<double> uDouble(-100, 100);\n" >> $CPPFILE
-fi
+printf "\tstruct timeb timeSeed;\n\tftime(&timeSeed);\n\tunsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;\n\tsrand(mileTime);\n" >> $CPPFILE
 printf "\n\twhile(positiveSet.size() <= 10 || negativeSet.size() <= 10) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
 
 for (( i=0; i<$VARNUM; i++  ));
 do
     if [[ ${TYPES[$i]} == "bool" ]]; then
-        printf "\t\tp->%s = abs(uInt(e) %% 2);\n" ${VARIABLES[$i]} >> $CPPFILE
+        printf "\t\tp->%s = abs(rand() %% 2);\n" ${VARIABLES[$i]} >> $CPPFILE
     elif [[ ${TYPES[$i]} == "int" ]]; then
-        printf "\t\tp->%s = uInt(e);\n" ${VARIABLES[$i]} >> $CPPFILE
+        printf "\t\tp->%s = (rand() %% 201) - 100;\n" ${VARIABLES[$i]} >> $CPPFILE
     else
-        printf "\t\tp->%s = uDouble(e);\n" ${VARIABLES[$i]} >> $CPPFILE
+        printf "\t\tp->%s = ((double)rand() / (double)RAND_MAX) * 200 - 100;\n" ${VARIABLES[$i]} >> $CPPFILE
     fi
 done
 printf "\n" >> $CPPFILE
