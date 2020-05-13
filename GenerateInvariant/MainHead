@@ -7,25 +7,34 @@ vector<string> Split(const string& in, const string& delim) {
 }
 
 int main(int argc, char** argv) {
-    if(argc < 2) {
+    if(argc < 3) {
         cerr << "Generate add border cpp needs more parameter." << endl;
-        cerr << "./generate src_file dst_file" << endl;
+        cerr << "./generate src_file data_file" << endl;
         exit(0);
     }
 
     /* store positive and negative examples */
     vector<Node> positiveSet;
     vector<Node> negativeSet;
+    vector<Node> oldSet;
 
     ifstream inFile;
+    ifstream dataFile;
     inFile.open(argv[1], ios::out | ios::in);
+    dataFile.open(argv[2], ios::out | ios::in);
     if(!inFile) {
         cerr << "Can't open " << argv[1] << endl;
         exit(-1);
     }
+    if(!dataFile) {
+        cerr << "Can't open " << argv[2] << endl;
+        exit(-1);
+    }
 
     string line;
-    while(getline(inFile, line)) {
+    while(getline(dataFile, line)) {
         vector<string> res = Split(line, " ");
-        Node *p = new Node;
-        // give Node variable
+        Node *p;
+        for(int i = 1;i < res.size();i++) {
+            vector<string> temp = Split(res[i], ":");
+            p = new Node;

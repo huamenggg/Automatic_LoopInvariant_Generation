@@ -39,10 +39,10 @@ int main(int argc, char** argv) {
     getline(dataFile, line);
     vector<string> res = Split(line, " ");
     int flag = stoi(res[0]);
-    vector<int> data;
+    vector<double> data;
     for(int i = 1;i < res.size();i++){
         vector<string> temp = Split(res[i], ":");
-        data.push_back(stoi(temp[1]));
+        data.push_back(stod(temp[1]));
     }
 
     // get the model of invariant

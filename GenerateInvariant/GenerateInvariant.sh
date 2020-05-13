@@ -89,7 +89,7 @@ fi
 cd $DIR_PROJECT
 
 ####################################################
-# Generate config file to cpp and compile
+# Generate add border node cpp and compile
 ####################################################
 EXTRACT_CONFIG="InitGenData/ExtractConfig.sh"
 ADD_BORDER_CPP=$BUILD"/"$PREFIX"_addBorder.cpp"
@@ -101,6 +101,16 @@ cat $ADD_BORDER_HEAD >> $ADD_BORDER_CPP
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
 TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
+for (( i=0; i<$VARNUM; i++ ));
+do
+    if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
+        printf "\t\t\tp->%s = stoi(temp[1]);\n" ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    else
+        printf "\t\t\tp->%s = stod(temp[1]);\n" ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    fi
+done
+printf "\t\t\toldSet.push_back(*p);\n\t\t}\n\t}\n\n" >> $ADD_BORDER_CPP
+printf "\twhile(getline(inFile, line)) {\n\t\tvector<string> res = Split(line, \" \");\n\t\tNode *p = new Node;\n\t\t// give Node variable\n" >> $ADD_BORDER_CPP
 for (( i=0; i<$VARNUM; i++ ));
 do
     if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
@@ -288,7 +298,7 @@ do
     cp $SVM_PARAMETER $SVM_BEFORE
     # Add border node into DATA_FILE
     echo -n -e $blue"Adding new border node into data file..."$normal
-    ./$ADD_BORDER_EXE $SVM_PREDICT >> $SVM_NEWNODE
+    ./$ADD_BORDER_EXE $SVM_PREDICT $DATA_FILE >> $SVM_NEWNODE
     OutputBorderNode $SVM_NEWNODE
     cat $SVM_NEWNODE >> $DATA_FILE
     echo -e $green"[Done]"$normal

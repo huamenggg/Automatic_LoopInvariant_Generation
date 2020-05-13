@@ -34,7 +34,7 @@ VERIFY_RESULT=$PREFIX"_verify.result"
 # cd build directory
 ###################################################
 cd $BUILD
-./$ADD_BORDER_EXE $VERIFY_RESULT >> $NEW_DATA_FILE
+./$ADD_BORDER_EXE $VERIFY_RESULT $DATA_FILE >> $NEW_DATA_FILE
 echo -n -e $blue"Adding new border node into data file..."$normal
 OutputBorderNode $NEW_DATA_FILE
 cat $NEW_DATA_FILE >> $DATA_FILE
