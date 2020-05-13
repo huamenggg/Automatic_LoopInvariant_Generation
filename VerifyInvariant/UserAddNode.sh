@@ -100,7 +100,7 @@ do
     read input
 done
 cat $USER_INPUT
-./$ADD_BORDER_EXE $USER_INPUT >> $NEW_DATA_FILE
+./$ADD_BORDER_EXE $USER_INPUT $DATA_FILE >> $NEW_DATA_FILE
 echo -n -e $blue"Adding new border node into data file..."$normal
 OutputBorderNode $NEW_DATA_FILE
 cat $NEW_DATA_FILE >> $DATA_FILE
