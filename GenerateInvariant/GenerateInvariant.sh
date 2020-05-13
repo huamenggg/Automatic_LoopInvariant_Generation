@@ -17,7 +17,7 @@ OutputBorderNode() {
 
 OutputHyperplane() {
     hyperplaneFile=$1
-    configFile=$2
+    varFile=$2
     invariantFile=$3
     dataFile=$4
     symbolFile=$5
@@ -27,13 +27,13 @@ OutputHyperplane() {
     if [ -f $symbolFile ]; then
         rm $symbolFile
     fi
-    variables=($(cat $configFile | grep "names@" | cut -d"@" -f 2))
+    variables=($(cat $varFile | cut -d"@" -f 2))
     varnum=${#variables[@]}
     b=$(sed -n '1p' $hyperplaneFile)
     parameters=($(sed -n '2,$p' $hyperplaneFile))
     for (( i=0; i<$varnum; i++ ));
     do
-        echo -n -e "${parameters[$i]} * ${variables[$i]} + " >> $invariantFile
+        printf "%s * %s + " ${parameters[$i]} "${variables[$i]}" >> $invariantFile
     done
     echo -e -n "$b " >> $invariantFile
     # calculating the symbol of the equation
@@ -83,6 +83,12 @@ fi
 if [ ! -f outputHyperplane ]; then
     g++ OutputHyperplane.cpp -o outputHyperplane
 fi
+if [ ! -f genPolyVar ]; then
+    g++ GenPolyVar.cpp -o genPolyVar
+fi
+if [ ! -f genPolyData ]; then
+    g++ GenPolyData.cpp -o genPolyData
+fi
 ###################################################
 # cd project root directory
 ###################################################
@@ -101,6 +107,8 @@ cat $ADD_BORDER_HEAD >> $ADD_BORDER_CPP
 VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
 TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
+DEGREE=$(cat $CONFIG_FILE | grep "degree@" | cut -d"@" -f 2)
+
 for (( i=0; i<$VARNUM; i++ ));
 do
     if [[ ${TYPES[$i]} == "bool" || ${TYPES[$i]} == "int" ]]; then
@@ -142,32 +150,44 @@ cd $BUILD
 
 ADD_BORDER_CPP=$PREFIX"_addBorder.cpp"
 ADD_BORDER_EXE=$PREFIX"_addBorder"
-VARS_FILE=$PREFIX".vars"
+POLY_VAR_FILE=$PREFIX".polyvars"
+POLY_DATA_FILE=$PREFIX".polydata"
 g++ $ADD_BORDER_CPP -o $ADD_BORDER_EXE
 
 CALC_HYPERPLANE="../../GenerateInvariant/calcHyperplane"
+GEN_VARIABLES="../../GenerateInvariant/genPolyVar"
+GEN_DATA="../../GenerateInvariant/genPolyData"
 SVM_TRAIN="../../libsvm-3.24/svm-train"
 
 ###################################################
 # Initial Iteration
 ###################################################
 echo -e $red"-----------------svm-learner 1-------------------"$normal
+echo -e $blue"Reflacting data to dimention degree..."$normal
+if [ -f $POLY_VAR_FILE ]; then
+    rm $POLY_VAR_FILE
+fi
+./$GEN_VARIABLES $CONFIG_FILE >> $POLY_VAR_FILE
+POLY_VAR=($(cat $POLY_VAR_FILE | cut -d"@" -f 2))
+POLY_VARNUM=${#POLY_VAR[@]}
+./$GEN_DATA $DATA_FILE $DEGREE >> $POLY_DATA_FILE
+echo -e $green"[Done]"$normal
 echo -e $blue"Using libsvm-3.24 to train the model..."$normal
-./$SVM_TRAIN -t 0 $DATA_FILE 1>/dev/null 2>&1
+./$SVM_TRAIN -t 0 $POLY_DATA_FILE 1>/dev/null 2>&1
 echo -e $green"[Done]"$normal
 
 echo -e $blue"Calculating Hyperplane of the model..."$normal
-SVM_MODEL=$DATA_FILE".model"
+SVM_MODEL=$POLY_DATA_FILE".model"
 SVM_PARAMETER=$PREFIX".parameter"
 INVARIANT_FILE=$PREFIX".invariant"
 SYMBOL_FILE=$PREFIX".symbol"
 if [ -f $SVM_PARAMETER ]; then
     rm $SVM_PARAMETER
 fi
-./$CALC_HYPERPLANE $SVM_MODEL $VARS_FILE >> $SVM_PARAMETER
+./$CALC_HYPERPLANE $SVM_MODEL $CONFIG_FILE >> $SVM_PARAMETER
 echo -e $green"[Done]"$normal
 echo -n -e $yellow"The hyperplane is : "$normal
-OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE $SYMBOL_FILE
+OutputHyperplane $SVM_PARAMETER $POLY_VAR_FILE $INVARIANT_FILE $POLY_DATA_FILE $SYMBOL_FILE
 
 ####################################################
 # Generate predict node cpp and compile
@@ -209,9 +229,9 @@ printf "\tz3::expr %s = c.real_const(\"%s\");\n" ${VARIABLES[(( $VARNUM - 1 ))]}
 
 ## Add invariant equation
 printf "\n\tz3::solver s(c);\n\n\ts.add(" >> $PREDICT_CPP
-for (( i=0; i<$VARNUM; i++  ))
+for (( i=0; i<$POLY_VARNUM; i++  ))
 do
-    printf "c.real_val(\"%s\") * %s + " ${PARAMETERS[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
+    printf "c.real_val(\"%s\") * %s + " ${PARAMETERS[$i]} "${POLY_VAR[$i]}" >> $PREDICT_CPP
 done
 printf "c.real_val(\"%s\") == 0);\n" $B >> $PREDICT_CPP
 ## if contain bool variable, add constraint
@@ -311,18 +331,22 @@ do
     rm $SVM_NEWNODE
     rm $PREDICT_CPP
     rm $PREDICT_NODE
+    rm $POLY_DATA_FILE
 
     # Begin the next iteration
     echo -e $red"-----------------svm-learner $iterator-------------------"$normal
+    echo -e $blue"Reflacting data to dimention degree..."$normal
+    ./$GEN_DATA $DATA_FILE $DEGREE >> $POLY_DATA_FILE
+    echo -e $green"[Done]"$normal
     echo -e $blue"Using libsvm-3.24 to train the model..."$normal
-    ./$SVM_TRAIN -t 0 $DATA_FILE 1>/dev/null 2>&1
+    ./$SVM_TRAIN -t 0 $POLY_DATA_FILE 1>/dev/null 2>&1
     echo -e $green"[Done]"$normal
 
     echo -e $blue"Calculating Hyperplane of the model..."$normal
-    ./$CALC_HYPERPLANE $SVM_MODEL $VARS_FILE >> $SVM_PARAMETER
+    ./$CALC_HYPERPLANE $SVM_MODEL $CONFIG_FILE >> $SVM_PARAMETER
     echo -e $green"[Done]"$normal
     echo -n -e $yellow"The hyperplane is : "$normal
-    OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE $SYMBOL_FILE
+    OutputHyperplane $SVM_PARAMETER $POLY_VAR_FILE $INVARIANT_FILE $POLY_DATA_FILE $SYMBOL_FILE
 
     ####################################################
     # Generate predict node cpp and compile
@@ -359,9 +383,9 @@ do
 
     ## Add invariant equation
     printf "\n\tz3::solver s(c);\n\n\ts.add(" >> $PREDICT_CPP
-    for (( i=0; i<$VARNUM; i++  ))
+    for (( i=0; i<$POLY_VARNUM; i++  ))
     do
-        printf "c.real_val(\"%s\") * %s + " ${PARAMETERS[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
+        printf "c.real_val(\"%s\") * %s + " ${PARAMETERS[$i]} "${POLY_VAR[$i]}" >> $PREDICT_CPP
     done
     printf "c.real_val(\"%s\") == 0);\n" $B >> $PREDICT_CPP
     ## if contain bool variable, add constraint

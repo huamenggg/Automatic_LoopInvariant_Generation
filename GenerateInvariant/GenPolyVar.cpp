@@ -84,7 +84,6 @@ int main(int argc, char** argv) {
         GeneratePolyVars(i, variables, polyVars);
     }
 
-    cout << "polyVars@";
     for(unsigned i = 0;i < polyVars.size();i++) {
         for(unsigned j = 0;j < polyVars[i].size();j++) {
             for(unsigned k = 0;k < polyVars[i][j].size();k++)

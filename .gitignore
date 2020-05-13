@@ -1,7 +1,8 @@
 /Build
 /libsvm-3.24
-InitGenData/GeneratePolynomial
 GenerateInvariant/predictNode
+GenerateInvariant/genPolyVar
+GenerateInvariant/genPolyData
 GenerateInvariant/calcHyperplane
 GenerateInvariant/outputHyperplane
 GenerateInvariant/calc.cpp
