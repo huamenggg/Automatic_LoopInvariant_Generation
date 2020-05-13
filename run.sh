@@ -38,6 +38,7 @@ echo -e $blue$bold$bold"Converting the given config file to a cplusplus file..."
 ./InitGenData/GenerateCPP.sh $BUILD $CONFIG_FILE $PREFIX
 echo -e $green"[Done]"$normal
 
+PARAMETER_FILE=$BUILD"/"$PREFIX".parameter"
 CPPFILE=$PREFIX".cpp"
 EXEFILE=$PREFIX
 INIT_DATA=$PREFIX".ds"
@@ -55,6 +56,18 @@ echo "#######################################################"
 echo -e $blue$bold"Generating Loop Invariant...[Times 1]"$normal$normal
 ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
 echo -e $green"[Done]"$normal
+PARAMETERS=($(sed -n '2,$p' $PARAMETER_FILE))
+IS_ALL_0=1
+for i in "${PARAMETERS[@]}"
+do
+    if [[ $i != "0.00" && $i != "0" && $i != "-0.00" && $i != "-0" ]]; then
+        IS_ALL_0=0
+    fi
+done
+if [ $IS_ALL_0 -eq 1 ]; then
+    echo -e $red$bold"Can't generate invariant...you might try again or change the tool"$normal$normal
+    exit -1
+fi
 
 ##########################################################################
 # Verify Invariant.
@@ -93,6 +106,19 @@ do
     echo -e $blue$bold"Generating Loop Invariant...[Times $ITERATION]"$normal$normal
     ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
     echo -e $green"[Done]"$normal
+
+    PARAMETERS=($(sed -n '2,$p' $PARAMETER_FILE))
+    IS_ALL_0=1
+    for i in "${PARAMETERS[@]}"
+    do
+        if [[ $i != "0.00" && $i != "0" ]]; then
+            IS_ALL_0=0
+        fi
+    done
+    if [ $IS_ALL_0 -eq 1 ]; then
+        echo -e $red$bold"Can't generate invariant...you might try again or change the tool"$normal$normal
+        exit -1
+    fi
 
     ##########################################################################
     # Verify Invariant.

@@ -142,6 +142,7 @@ cd $BUILD
 
 ADD_BORDER_CPP=$PREFIX"_addBorder.cpp"
 ADD_BORDER_EXE=$PREFIX"_addBorder"
+VARS_FILE=$PREFIX".vars"
 g++ $ADD_BORDER_CPP -o $ADD_BORDER_EXE
 
 CALC_HYPERPLANE="../../GenerateInvariant/calcHyperplane"
@@ -163,7 +164,7 @@ SYMBOL_FILE=$PREFIX".symbol"
 if [ -f $SVM_PARAMETER ]; then
     rm $SVM_PARAMETER
 fi
-./$CALC_HYPERPLANE $SVM_MODEL >> $SVM_PARAMETER
+./$CALC_HYPERPLANE $SVM_MODEL $VARS_FILE >> $SVM_PARAMETER
 echo -e $green"[Done]"$normal
 echo -n -e $yellow"The hyperplane is : "$normal
 OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE $SYMBOL_FILE
@@ -233,7 +234,7 @@ if [ $VARNUM -eq 1 ]; then
     printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
 else
     ## else generate 5 group sets by random
-    printf "\tint loopTime = 0;\n\twhile(loopTime < 5) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+    printf "for(int i = 0;i < 5;i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
     ## generate random value of top n-1 variables
     for (( i=0; i<${VARNUM}-1; i++  ));
     do
@@ -245,7 +246,7 @@ else
             printf "\t\tvalDouble = ((double)rand() / (double)RAND_MAX) * 200 - 100;\n\t\tstring str = Double2String(valDouble);\n\t\tchar const *a = const_cast<char *>(str.c_str());\n\t\ts.add(%s == c.real_val(a));\n\t\tp->%s = valDouble;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
         fi
     done
-    printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tloopTime++;\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
+    printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
     if [[ ${TYPES[(( $VARNUM - 1 ))]} == "bool" || ${TYPES[(( $VARNUM - 1 ))]} == "int" ]]; then
         printf "\t\t\t\t\t\tp->%s = GetIntValue(m.get_const_interp(v).get_decimal_string(10));\n\t\t\t\t\t}\n\t\t\t\t}\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
     else
@@ -318,7 +319,7 @@ do
     echo -e $green"[Done]"$normal
 
     echo -e $blue"Calculating Hyperplane of the model..."$normal
-    ./$CALC_HYPERPLANE $SVM_MODEL >> $SVM_PARAMETER
+    ./$CALC_HYPERPLANE $SVM_MODEL $VARS_FILE >> $SVM_PARAMETER
     echo -e $green"[Done]"$normal
     echo -n -e $yellow"The hyperplane is : "$normal
     OutputHyperplane $SVM_PARAMETER $CONFIG_FILE $INVARIANT_FILE $DATA_FILE $SYMBOL_FILE
@@ -383,7 +384,7 @@ do
         printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
     else
         ## else generate 5 group sets by random
-        printf "\tint loopTime = 0;\n\twhile(loopTime < 5) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+        printf "\tfor(int i = 0; i < 5;i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
         ## generate random value of top n-1 variables
         for (( i=0; i<${VARNUM}-1; i++  ));
         do
@@ -395,7 +396,7 @@ do
                 printf "\t\tvalDouble = ((double)rand() / (double)RAND_MAX) * 200 - 100;\n\t\tstring str = Double2String(valDouble);\n\t\tchar const *a = const_cast<char *>(str.c_str());\n\t\ts.add(%s == c.real_val(a));\n\t\tp->%s = valDouble;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
             fi
         done
-        printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tloopTime++;\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
+        printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
         if [[ ${TYPES[(( $VARNUM - 1 ))]} == "bool" || ${TYPES[(( $VARNUM - 1 ))]} == "int" ]]; then
             printf "\t\t\t\t\t\tp->%s = GetIntValue(m.get_const_interp(v).get_decimal_string(10));\n\t\t\t\t\t}\n\t\t\t\t}\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
         else
