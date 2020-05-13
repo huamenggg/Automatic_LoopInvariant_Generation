@@ -35,6 +35,6 @@ int main(int argc, char** argv) {
     while(getline(dataFile, line)) {
         vector<string> res = Split(line, " ");
         Node *p;
-        for(int i = 1;i < res.size();i++) {
-            vector<string> temp = Split(res[i], ":");
+        for(int m_i = 1;m_i < res.size();m_i++) {
+            vector<string> temp = Split(res[m_i], ":");
             p = new Node;

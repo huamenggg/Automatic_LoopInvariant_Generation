@@ -8,5 +8,5 @@
     }
         
     /* output example */
-    for(size_t i = 0;i < positiveSet.size();i++){
+    for(size_t m_i = 0;m_i < positiveSet.size();m_i++){
         cout << "+1 ";

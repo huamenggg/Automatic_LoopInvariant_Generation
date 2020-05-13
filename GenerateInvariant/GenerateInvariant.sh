@@ -123,16 +123,16 @@ cat $ADD_BORDER_MEDIUM >> $ADD_BORDER_CPP
 # Output variabl number to file
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    printf "\t\tcout << \"%d:\" << positiveSet[m_i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
 done
-printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
+printf "\t\tcout << \"%d:\" << positiveSet[m_i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 
-printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\tcout << \"-1 \";\n" >> $ADD_BORDER_CPP
+printf "\t}\n\tfor(size_t m_i = 0;m_i < negativeSet.size();m_i++){\n\t\tcout << \"-1 \";\n" >> $ADD_BORDER_CPP
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
+    printf "\t\tcout << \"%d:\" << negativeSet[m_i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $ADD_BORDER_CPP
 done
-printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
+printf "\t\tcout << \"%d:\" << negativeSet[m_i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $ADD_BORDER_CPP
 cat $ADD_BORDER_TAIL >> $ADD_BORDER_CPP
 
 ###################################################
@@ -234,7 +234,7 @@ if [ $VARNUM -eq 1 ]; then
     printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
 else
     ## else generate 5 group sets by random
-    printf "for(int i = 0;i < 5;i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+    printf "for(int m_i = 0;m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
     ## generate random value of top n-1 variables
     for (( i=0; i<${VARNUM}-1; i++  ));
     do
@@ -246,7 +246,7 @@ else
             printf "\t\tvalDouble = ((double)rand() / (double)RAND_MAX) * 200 - 100;\n\t\tstring str = Double2String(valDouble);\n\t\tchar const *a = const_cast<char *>(str.c_str());\n\t\ts.add(%s == c.real_val(a));\n\t\tp->%s = valDouble;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
         fi
     done
-    printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
+    printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned m_i = 0;m_i < m.size(); m_i++) {\n\t\t\t\t\tz3::func_decl v = m[m_i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
     if [[ ${TYPES[(( $VARNUM - 1 ))]} == "bool" || ${TYPES[(( $VARNUM - 1 ))]} == "int" ]]; then
         printf "\t\t\t\t\t\tp->%s = GetIntValue(m.get_const_interp(v).get_decimal_string(10));\n\t\t\t\t\t}\n\t\t\t\t}\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
     else
@@ -384,7 +384,7 @@ do
         printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
     else
         ## else generate 5 group sets by random
-        printf "\tfor(int i = 0; i < 5;i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+        printf "\tfor(int m_i = 0; m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
         ## generate random value of top n-1 variables
         for (( i=0; i<${VARNUM}-1; i++  ));
         do
@@ -396,7 +396,7 @@ do
                 printf "\t\tvalDouble = ((double)rand() / (double)RAND_MAX) * 200 - 100;\n\t\tstring str = Double2String(valDouble);\n\t\tchar const *a = const_cast<char *>(str.c_str());\n\t\ts.add(%s == c.real_val(a));\n\t\tp->%s = valDouble;\n" ${VARIABLES[$i]} ${VARIABLES[$i]} >> $PREDICT_CPP
             fi
         done
-        printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned i = 0;i < m.size(); i++) {\n\t\t\t\t\tz3::func_decl v = m[i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
+        printf "\t\tswitch(s.check()) {\n\t\t\tcase z3::unsat: break;\n\t\t\tcase z3::sat: {\n\t\t\t\tz3::model m = s.get_model();\n\t\t\t\tfor (unsigned m_i = 0;m_i < m.size(); m_i++) {\n\t\t\t\t\tz3::func_decl v = m[m_i];\n\t\t\t\t\tif(v.name().str() == \"%s\") {\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
         if [[ ${TYPES[(( $VARNUM - 1 ))]} == "bool" || ${TYPES[(( $VARNUM - 1 ))]} == "int" ]]; then
             printf "\t\t\t\t\t\tp->%s = GetIntValue(m.get_const_interp(v).get_decimal_string(10));\n\t\t\t\t\t}\n\t\t\t\t}\n" ${VARIABLES[(( $VARNUM - 1 ))]} >> $PREDICT_CPP
         else

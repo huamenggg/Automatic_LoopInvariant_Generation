@@ -78,7 +78,7 @@ printf "\n" >> $VARS_FILE
 #---------------------------------------------
 ## GiveVarValue function
 #---------------------------------------------
-printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned i = 0;i < m.size();i++) {\n\t\tz3::func_decl v = m[i];\n\t\tstring name = v.name().str();\n" >> $CPPFILE
+printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned m_i = 0;m_i < m.size();m_i++) {\n\t\tz3::func_decl v = m[m_i];\n\t\tstring name = v.name().str();\n" >> $CPPFILE
 printf "\t\tif(name == \"%s\") {\n" ${VARIABLES[0]} >> $CPPFILE
 OutputModelValue 0 "\t\t\t" $CPPFILE
 printf "\t\t}\n" >> $CPPFILE
@@ -144,14 +144,14 @@ printf "\n" >> $CPPFILE
 cat $MAINMEDIUM >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\tcout << \"%d:\" << positiveSet[m_i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\tcout << \"%d:\" << positiveSet[i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\tcout << \"%d:\" << positiveSet[m_i].%s << \" \" << endl;\n" ${VARNUM} ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 
-printf "\t}\n\tfor(size_t i = 0;i < negativeSet.size();i++){\n\t\tcout << \"-1 \";\n" >> $CPPFILE
+printf "\t}\n\tfor(size_t m_i = 0;m_i < negativeSet.size();m_i++){\n\t\tcout << \"-1 \";\n" >> $CPPFILE
 for (( i=0; i<${VARNUM}-1; i++  ));
 do
-    printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
+    printf "\t\tcout << \"%d:\" << negativeSet[m_i].%s << \" \";\n" $[i + 1] ${VARIABLES[$i]} >> $CPPFILE
 done
-printf "\t\tcout << \"%d:\" << negativeSet[i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
+printf "\t\tcout << \"%d:\" << negativeSet[m_i].%s << \" \" << endl;\n" ${VARNUM}  ${VARIABLES[(( $VARNUM - 1 ))]} >> $CPPFILE
 cat $MAINTAIL >> $CPPFILE

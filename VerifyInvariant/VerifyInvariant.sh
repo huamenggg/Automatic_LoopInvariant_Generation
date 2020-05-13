@@ -135,7 +135,7 @@ printf "};\n\n" >> $VERIFY1
 #---------------------------------------------
 ## GiveVarValue function
 #---------------------------------------------
-printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned i = 0;i < m.size();i++) {\n\t\tz3::func_decl v = m[i];\n\t\tstd::string name = v.name().str();\n" >> $VERIFY1
+printf "void GiveVarValue(Node *p, z3::model m) {\n\tfor(unsigned m_i = 0;m_i < m.size();m_i++) {\n\t\tz3::func_decl v = m[m_i];\n\t\tstd::string name = v.name().str();\n" >> $VERIFY1
 printf "\t\tif(name == \"%s\") {\n" ${VARIABLES[0]} >> $VERIFY1
 OutputModelValue 0 "\t\t\t" $VERIFY1
 printf "\t\t}\n" >> $VERIFY1
