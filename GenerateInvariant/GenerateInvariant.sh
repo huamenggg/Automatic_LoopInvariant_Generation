@@ -254,7 +254,7 @@ if [ $VARNUM -eq 1 ]; then
     printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
 else
     ## else generate 5 group sets by random
-    printf "for(int m_i = 0;m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+    printf "\tfor(int m_i = 0;m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
     ## generate random value of top n-1 variables
     for (( i=0; i<${VARNUM}-1; i++  ));
     do
