@@ -28,19 +28,19 @@ string doubleContain2(const double &dbNum)
 int main(int argc, char** argv){
     if(argc < 3) {
         cerr << "CalcHyperplane.cpp needs more paramters" << endl;
-        cerr << "./CalcHyperplane input.model varFile" << endl;
+        cerr << "./CalcHyperplane input.model config_file" << endl;
         exit(-1);
     }
 
     ifstream svFile;
-    ifstream varFile;
+    ifstream configFile;
     svFile.open(argv[1], ios::out | ios::in );
-    varFile.open(argv[2], ios::out | ios::in );
+    configFile.open(argv[2], ios::out | ios::in );
     if(!svFile) {
         cerr << "Can't open " << argv[1] << endl;
         exit(-1);
     }
-    if(!varFile) {
+    if(!configFile) {
         cerr << "Can't open " << argv[2] << endl;
         exit(-1);
     }
@@ -54,14 +54,13 @@ int main(int argc, char** argv){
     // the remain part of support vector is alpha
     vector<vector<double>> alpha;
 
-    vector<string> types;
     bool isContainDouble = false;
-    while(getline(varFile, line)) {
-        vector<string> res = Split(line, " ");
+    while(getline(configFile, line)) {
+        vector<string> res = Split(line, "@");
         if(res[0] == "types") {
-            for(int i = 1;i < res.size();i++) {
-                types.push_back(res[i]);
-                if(res[i] == "double") isContainDouble = true;
+            vector<string> temp = Split(res[1], " ");
+            for(int i = 1;i < temp.size();i++) {
+                if(temp[i] == "double") isContainDouble = true;
             }
         }
     }

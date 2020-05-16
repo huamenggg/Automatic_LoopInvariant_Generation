@@ -194,7 +194,9 @@ do
     printf "\t%s %s;\n" ${TYPES[$i]} ${VARIABLES[$i]} >> $VERIFY2
     printf "\tklee_make_symbolic(&%s, sizeof(%s), \"%s\");\n" ${VARIABLES[$i]} ${VARIABLES[$i]} ${VARIABLES[$i]} >> $VERIFY2
 done
-printf "\tklee_assume(%s);\n" "$LOOPCONDITION" >> $VERIFY2
+if [[ $LOOPCONDITION != "0" ]]; then
+    printf "\tklee_assume(%s);\n" "$LOOPCONDITION" >> $VERIFY2
+fi
 printf "\tklee_assume(%s);\n" "$INVARIANT" >> $VERIFY2
 if [[ $LOOPBEFORE != "" ]]; then
     printf "\t%s\n" "$LOOPBEFORE" >> $VERIFY2
@@ -225,7 +227,10 @@ do
     echo -n -e "c.real_val(\"${PARAMETERS[$i]}\") * ${VARIABLES[$i]} + " >> $VERIFY3
 done
 printf "c.real_val(\"%s\") %s 0);\n" $B $SYMBOL >> $VERIFY3
-printf "\n\t// !condition\n\ts.add(!(%s));\n\n\t// !postcondition\n\ts.add(!(%s));\n" "$LOOPCONDITION" "$POSTCONDITION" >> $VERIFY3
+if [[ $LOOPCONDITION != "0" ]]; then
+    printf "\n\t// !condition\n\ts.add(!(%s));\n\n" "$LOOPCONDITION" >> $VERIFY3
+fi
+printf "\t// !postcondition\n\ts.add(!(%s));\n" "$POSTCONDITION" >> $VERIFY3
 cat $MAINMEDIUM >> $VERIFY3
 printf "\t\t\tstd::cout << " >> $VERIFY3
 for i in "${VARIABLES[@]}"
