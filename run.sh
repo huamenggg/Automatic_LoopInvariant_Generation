@@ -26,6 +26,7 @@ KLEE_INCLUDE=$3
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
+INTERACTIVE=$(cat $CONFIG_FILE | grep "interactive@" | cut -d"@" -f 2)
 if [ -d $BUILD ]; then
     rm $BUILD -rf
 fi
@@ -89,7 +90,9 @@ else
     echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
     #add new border node
     ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
-    ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+    if [[ $INTERACTIVE -eq 1 ]]; then
+        ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+    fi
     echo "#######################################################"
 fi
 
@@ -140,7 +143,9 @@ do
         echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
         #add new border node
         ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
-        ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+        if [[ $INTERACTIVE -eq 1 ]]; then
+            ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+        fi
         echo "#######################################################"
     fi
     let ITERATION++

@@ -170,6 +170,9 @@ echo -e $blue"Reflacting data to dimention degree..."$normal
 if [ -f $POLY_VAR_FILE ]; then
     rm $POLY_VAR_FILE
 fi
+if [ -f $POLY_DATA_FILE ]; then
+    rm $POLY_DATA_FILE
+fi
 ./$GEN_VARIABLES $CONFIG_FILE >> $POLY_VAR_FILE
 POLY_VAR=($(cat $POLY_VAR_FILE | cut -d"@" -f 2))
 POLY_VARNUM=${#POLY_VAR[@]}

@@ -99,7 +99,6 @@ do
     echo -e $yellow$bold"[input $red\"Y\"$yellow to add, input $red\"N\"$yellow or other to ignore]"$normal$normal
     read input
 done
-cat $USER_INPUT
 ./$ADD_BORDER_EXE $USER_INPUT $DATA_FILE >> $NEW_DATA_FILE
 echo -n -e $blue"Adding new border node into data file..."$normal
 OutputBorderNode $NEW_DATA_FILE
