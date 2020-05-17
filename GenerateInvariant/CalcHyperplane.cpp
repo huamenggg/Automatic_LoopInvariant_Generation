@@ -59,7 +59,7 @@ int main(int argc, char** argv){
         vector<string> res = Split(line, "@");
         if(res[0] == "types") {
             vector<string> temp = Split(res[1], " ");
-            for(int i = 1;i < temp.size();i++) {
+            for(int i = 0;i < temp.size();i++) {
                 if(temp[i] == "double") isContainDouble = true;
             }
         }
