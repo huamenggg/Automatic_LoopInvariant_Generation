@@ -14,11 +14,11 @@ if [ $# -lt 3 ]; then
 fi
 
 BUILD=$1
-CONFIG_FILE=$2
+TEST_FILE=$2
 CPPFILE=$3
 HEAD=$DIR_PROJECT"/Head"
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
-TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
+VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
+TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
 TYPESNUM=${#TYPES[@]}
 
@@ -58,7 +58,7 @@ do
     printf "\t%s %s = aNode->%s;\n" ${TYPES[$i]} ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
 done
 printf "\n\tif(" >> $CPPFILE
-PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
+PRECONDITION=$(cat $TEST_FILE | grep "precondition@" | cut -d"@" -f 2)
 printf %s "$PRECONDITION" >> $CPPFILE
 printf ") return 1;\n\treturn -1;\n}\n\n" >> $CPPFILE
 
@@ -72,7 +72,7 @@ do
     printf "\t%s %s = aNode->%s;\n" ${TYPES[$i]} ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
 done
 printf "\n\tif(" >> $CPPFILE
-POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
+POSTCONDITION=$(cat $TEST_FILE | grep "postcondition@" | cut -d"@" -f 2)
 printf %s "$POSTCONDITION" >> $CPPFILE
 printf ") return 1;\n\treturn -1;\n}\n\n" >> $CPPFILE
 
@@ -84,15 +84,15 @@ for (( i=0; i<$VARNUM; i++  ));
 do
     printf "\t%s %s = aNode->%s;\n" ${TYPES[$i]} ${VARIABLES[$i]} ${VARIABLES[$i]} >> $CPPFILE
 done
-BEFORELOOP=$(cat $CONFIG_FILE | grep "loopbefore@" | cut -d"@" -f 2)
+BEFORELOOP=$(cat $TEST_FILE | grep "loopbefore@" | cut -d"@" -f 2)
 if [[ $BEFORELOOP != "" ]]; then
     printf "\t%s\n" "$BEFORELOOP" >> $CPPFILE
 fi
 printf "\n\tNode *_p;\n\twhile(" >> $CPPFILE
-LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
+LOOPCONDITION=$(cat $TEST_FILE | grep "loopcondition@" | cut -d"@" -f 2)
 printf "%s" "$LOOPCONDITION" >> $CPPFILE
 printf "){\n\t\t" >> $CPPFILE
-LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
+LOOP=$(cat $TEST_FILE | grep "loop@" | cut -d"@" -f 2)
 echo "$LOOP" >> $CPPFILE
 printf "\n\t\t_p = new Node;\n" >> $CPPFILE
 for i in "${VARIABLES[@]}"

@@ -20,13 +20,14 @@ if [ ! -f $1 ]; then
 	exit 1
 fi
 
-CONFIG_FILE=$1
+IS_OUTPUT_DETAIL=0
+TEST_FILE=$1
 Z3_BUILD_DIR=$2
 KLEE_INCLUDE=$3
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
-INTERACTIVE=$(cat $CONFIG_FILE | grep "interactive@" | cut -d"@" -f 2)
+INTERACTIVE=$(cat $TEST_FILE | grep "interactive@" | cut -d"@" -f 2)
 if [ -d $BUILD ]; then
     rm $BUILD -rf
 fi
@@ -35,28 +36,49 @@ mkdir -p $BUILD
 ##########################################################################
 # Convert config file to cpp, compile it and generate init data.
 ##########################################################################
-echo -e $blue$bold$bold"Converting the given config file to a cplusplus file..."$normal$normal
-./InitGenData/GenerateCPP.sh $BUILD $CONFIG_FILE $PREFIX
-echo -e $green"[Done]"$normal
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e -n "Converting the given config file to a cplusplus file..."
+else
+    echo -e -n "Generating..."
+fi
+./InitGenData/GenerateCPP.sh $BUILD $TEST_FILE $PREFIX
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e $green"[Done]"$normal
+fi
 
 PARAMETER_FILE=$BUILD"/"$PREFIX".parameter"
 CPPFILE=$PREFIX".cpp"
 EXEFILE=$PREFIX
 INIT_DATA=$PREFIX".ds"
-echo -e $blue$bold"Compile the cplusplus file and get the initial data"$normal$normal
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e -n "Compile the cplusplus file and get the initial data..."
+fi
 cd $BUILD
 g++ $CPPFILE -o $EXEFILE -lz3 -L$Z3_BUILD_DIR
 ./$EXEFILE >> $INIT_DATA
-echo -e $green"[Done]"$normal
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e $green"[Done]"$normal
+fi
 cd $DIR_PROJECT
 
 ##########################################################################
 # Generate Loop Invariant.
 ##########################################################################
-echo "#######################################################"
-echo -e $blue$bold"Generating Loop Invariant...[Times 1]"$normal$normal
-./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
-echo -e $green"[Done]"$normal
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e $yellow"#######################################################"$normal
+    echo -e "Generating Loop Invariant...[Times 1]"
+else
+    echo -n "..."
+fi
+
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR
+else
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR 1>/dev/null 2>&1
+fi
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e $green"[Done]"$normal
+fi
 PARAMETERS=($(sed -n '2,$p' $PARAMETER_FILE))
 IS_ALL_0=1
 for i in "${PARAMETERS[@]}"
@@ -73,27 +95,46 @@ fi
 ##########################################################################
 # Verify Invariant.
 ##########################################################################
-echo -e $blue$bold"Verifying Invariant..."$normal$normal
-./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e "Verifying Invariant..."
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
+else
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE 1>/dev/null 2>&1
+fi
 VERIFY_RESULT=$?
-echo -e $green"[Done]"$normal
+if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+    echo -e $green"[Done]"$normal
+fi
 if [ $VERIFY_RESULT -eq 0 ]; then
-    echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
-    echo -e $gree"[Process Finished]"$normal
-    echo -e $yellow"------------------------------------------------"$normal
-    echo -e -n $yellow"The invariant is : "$normal
-    cat $INVARIANT_FILE
-    echo ""
-    echo -e $yellow"------------------------------------------------"$normal
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e -n "The generated Invariant satisfies hoare triple"
+        echo -e $green"[Process Finished]"$normal
+    else
+        echo ""
+    fi
+    echo -e $green$bold"------------------------------------------------"$normal$normal
+    echo -e -n "The invariant is : "
+    OUTPUT_INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
+    echo -e $bold"$OUTPUT_INVARIANT"$normal
+    echo -e $green"------------------------------------------------"$normal
     exit 0
 else
-    echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
-    #add new border node
-    ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
-    if [[ $INTERACTIVE -eq 1 ]]; then
-        ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
     fi
-    echo "#######################################################"
+    #add new border node
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e "Verifying Invariant..."
+        ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
+    else
+        ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX 1>/dev/null 2>&1
+    fi
+    if [[ $INTERACTIVE -eq 1 ]]; then
+        ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $TEST_FILE
+    fi
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e $yellow"#######################################################"$normal
+    fi
 fi
 
 ITERATION=2
@@ -106,15 +147,24 @@ do
     ##########################################################################
     # Generate Loop Invariant.
     ##########################################################################
-    echo -e $blue$bold"Generating Loop Invariant...[Times $ITERATION]"$normal$normal
-    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR
-    echo -e $green"[Done]"$normal
-
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e "Generating Loop Invariant...[Times $ITERATION]"
+    else
+        echo -n "..."
+    fi
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR
+    else
+        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR 1>/dev/null 2>&1
+    fi
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e $green"[Done]"$normal
+    fi
     PARAMETERS=($(sed -n '2,$p' $PARAMETER_FILE))
     IS_ALL_0=1
     for i in "${PARAMETERS[@]}"
     do
-        if [[ $i != "0.00" && $i != "0" ]]; then
+        if [[ $i != "0.00" && $i != "0" && $i != "-0.00" && $i != "-0" ]]; then
             IS_ALL_0=0
         fi
     done
@@ -126,27 +176,39 @@ do
     ##########################################################################
     # Verify Invariant.
     ##########################################################################
-    echo -e $blue$bold"Verifying Invariant..."$normal$normal
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $CONFIG_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e "Verifying Invariant..."
+    fi
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
     VERIFY_RESULT=$?
-    echo -e $green"[Done]"$normal
+    if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+        echo -e $green"[Done]"$normal
+    fi
     if [ $VERIFY_RESULT -eq 0 ]; then
-        echo -e $blue$bold"The generated Invariant satisfies hoare triple"$normal$normal
-        echo -e $gree"[Process Finished]"$normal
-        echo -e $yellow"------------------------------------------------"$normal
-        echo -e -n $yellow"The invariant is :"$normal
-        cat $INVARIANT_FILE
-        echo ""
-        echo -e $yellow"------------------------------------------------"$normal
+        if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+            echo -e -n "The generated Invariant satisfies hoare triple"
+            echo -e $green"[Process Finished]"$normal
+        else
+            echo ""
+        fi
+        echo -e $green"------------------------------------------------"$normal
+        echo -e -n "The invariant is :"
+        OUTPUT_INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
+        echo -e $bold"$OUTPUT_INVARIANT"$normal
+        echo -e $green"------------------------------------------------"$normal
         exit 0
     else
-        echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
+        if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+            echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
+        fi
         #add new border node
         ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
         if [[ $INTERACTIVE -eq 1 ]]; then
-            ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $CONFIG_FILE
+            ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $TEST_FILE
         fi
-        echo "#######################################################"
+        if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+            echo -e $yellow"#######################################################"$normal
+        fi
     fi
     let ITERATION++
 done

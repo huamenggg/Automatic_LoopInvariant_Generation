@@ -70,7 +70,7 @@ fi
 
 BUILD=$1
 PREFIX=$2
-CONFIG_FILE=$3
+TEST_FILE=$3
 Z3_BUILD_DIR=$4
 KLEE_INCLUDE=$5
 PARAMETER_FILE=$BUILD"/"$PREFIX".parameter"
@@ -97,14 +97,14 @@ B=$(sed -n '1p' $PARAMETER_FILE)
 PARAMETERS=($(sed -n '2,$p' $PARAMETER_FILE))
 SYMBOL=$(sed -n '1p' $SYMBOL_FILE)
 INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
-LOOPBEFORE=$(cat $CONFIG_FILE | grep "loopbefore@" | cut -d"@" -f 2)
-PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
-POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
-LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
-LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+LOOPBEFORE=$(cat $TEST_FILE | grep "loopbefore@" | cut -d"@" -f 2)
+PRECONDITION=$(cat $TEST_FILE | grep "precondition@" | cut -d"@" -f 2)
+POSTCONDITION=$(cat $TEST_FILE | grep "postcondition@" | cut -d"@" -f 2)
+LOOPCONDITION=$(cat $TEST_FILE | grep "loopcondition@" | cut -d"@" -f 2)
+LOOP=$(cat $TEST_FILE | grep "loop@" | cut -d"@" -f 2)
+VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
-TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
+TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
 
 ##############################################################
 # Generate verify z3 cpp file

@@ -38,7 +38,7 @@ if [ $# -lt 3 ]; then
 fi
 
 BUILD=$1
-CONFIG_FILE=$2
+TEST_FILE=$2
 PREFIX=$3
 CPPFILE=$BUILD"/"$PREFIX".cpp"
 HEAD=$DIR_PROJECT"/Head"
@@ -46,10 +46,10 @@ EXTRACT="InitGenData/ExtractConfig.sh"
 MAINHEAD=$DIR_PROJECT"/MainHead"
 MAINMEDIUM=$DIR_PROJECT"/MainMedium"
 MAINTAIL=$DIR_PROJECT"/MainTail"
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
-TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
-PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
+TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
+PRECONDITION=$(cat $TEST_FILE | grep "precondition@" | cut -d"@" -f 2)
 
 #---------------------------------------------
 ## Extract variables
@@ -73,7 +73,7 @@ printf "\n" >> $VARS_FILE
 #---------------------------------------------
 ## Extract function from config file
 #---------------------------------------------
-./$EXTRACT $BUILD $CONFIG_FILE $CPPFILE
+./$EXTRACT $BUILD $TEST_FILE $CPPFILE
 
 #---------------------------------------------
 ## GiveVarValue function

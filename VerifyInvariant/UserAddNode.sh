@@ -25,26 +25,26 @@ fi
 DIR_PROJECT=$(pwd)
 BUILD=$1
 PREFIX=$2
-CONFIG_FILE=$3
+TEST_FILE=$3
 ADD_BORDER_EXE=$PREFIX"_addBorder"
 DATA_FILE=$PREFIX".ds"
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
 NEW_DATA_FILE=$PREFIX".newnode"
 USER_INPUT=$PREFIX".userinput"
 
-LOOPBEFORE=$(cat $CONFIG_FILE | grep "loopbefore@" | cut -d"@" -f 2)
-PRECONDITION=$(cat $CONFIG_FILE | grep "precondition@" | cut -d"@" -f 2)
-POSTCONDITION=$(cat $CONFIG_FILE | grep "postcondition@" | cut -d"@" -f 2)
-LOOPCONDITION=$(cat $CONFIG_FILE | grep "loopcondition@" | cut -d"@" -f 2)
-LOOP=$(cat $CONFIG_FILE | grep "loop@" | cut -d"@" -f 2)
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+LOOPBEFORE=$(cat $TEST_FILE | grep "loopbefore@" | cut -d"@" -f 2)
+PRECONDITION=$(cat $TEST_FILE | grep "precondition@" | cut -d"@" -f 2)
+POSTCONDITION=$(cat $TEST_FILE | grep "postcondition@" | cut -d"@" -f 2)
+LOOPCONDITION=$(cat $TEST_FILE | grep "loopcondition@" | cut -d"@" -f 2)
+LOOP=$(cat $TEST_FILE | grep "loop@" | cut -d"@" -f 2)
+VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
 INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
 
 ###################################################
 # Output current situation
 ###################################################
-echo -e $yellow$bold"\n\n            [User Input Border Node]             "$normal$normal
-echo -e $blue$bold"\n-------------------The hoare is----------------------"$normal$normal
+echo -e $bold"\n\n            [User Input Border Node]             "$normal
+echo -e "\n-------------------The hoare is----------------------"
 echo -e -n $yellow"[variables]: "$normal
 for i in "${VARIABLES[@]}"
 do
@@ -63,11 +63,11 @@ printf "}\n"
 echo -e -n $yellow"[postcondition]: "$normal
 echo -e "$POSTCONDITION"
 
-echo -e $blue$bold"-----------------The invariant is--------------------"$normal$normal
-echo "$INVARIANT"
-echo -e $blue$bold"-----------------------------------------------------"$normal$normal
-echo -e $yellow$bold"Do you want to mannually add some border node?"$normal$normal
-echo -e $yellow$bold"[input $red\"Y\"$yellow to add, input $red\"N\"$yellow or other to ignore]"$normal$normal
+echo -e "-----------------The invariant is--------------------"
+echo -e $bold"$INVARIANT"$normal
+echo -e "-----------------------------------------------------"
+echo -e "Do you want to mannually add some border node?"
+echo -e "[input $red\"Y\"$normal to add, input $red\"N\"$normal or other to ignore]"
 read input
 if [ "$input" != "Y" ]; then
     exit 0
@@ -85,7 +85,7 @@ while [ "$input" == "Y" ];
 do
     for i in "${VARIABLES[@]}"
     do
-        echo -e $blue$bold"Please input $i"$normal$normal
+        echo -e "Please input $i"
         read x
         while [ -z $x ];
         do
@@ -95,12 +95,12 @@ do
         echo -n "$x " >> $USER_INPUT
     done
     printf "\n" >> $USER_INPUT
-    echo -e $yellow$bold"Do you want to add more border node?"$normal$normal
-    echo -e $yellow$bold"[input $red\"Y\"$yellow to add, input $red\"N\"$yellow or other to ignore]"$normal$normal
+    echo -e "Do you want to add more border node?"
+    echo -e "[input $red\"Y\"$normal to add, input $red\"N\"$normal or other to ignore]"
     read input
 done
 ./$ADD_BORDER_EXE $USER_INPUT $DATA_FILE >> $NEW_DATA_FILE
-echo -n -e $blue"Adding new border node into data file..."$normal
+echo -n -e "Adding new border node into data file..."
 OutputBorderNode $NEW_DATA_FILE
 cat $NEW_DATA_FILE >> $DATA_FILE
 rm $NEW_DATA_FILE

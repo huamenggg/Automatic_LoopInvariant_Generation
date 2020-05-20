@@ -3,6 +3,7 @@ red="\e[31m"
 green="\e[32m"
 yellow="\e[33m"
 blue="\e[34m"
+purple="\e[35m"
 normal="\e[0m"
 bold="\e[1m"
 
@@ -10,7 +11,7 @@ OutputBorderNode() {
     nodeFile=$1
     while read line
     do
-        echo -n -e $yellow" [$line] "$normal
+        echo -n -e $purple" [$line] "$normal
     done < $nodeFile
     printf "\n"
 }
@@ -53,7 +54,7 @@ OutputHyperplane() {
 
 if [ $# -lt 4 ]; then
 	echo "sh GenerateInvariant.sh needs more parameters"
-	echo "sh GenerateInvariant.sh BUILD PREFIX CONFIG_FILE Z3_BUILD_DIR"
+	echo "sh GenerateInvariant.sh BUILD PREFIX TEST_FILE Z3_BUILD_DIR"
 	echo "try it again..."
 	exit 1
 fi
@@ -62,12 +63,12 @@ DIR_PROJECT=$(pwd)
 GEN_PROJECT=$DIR_PROJECT"/GenerateInvariant"
 BUILD=$1
 PREFIX=$2
-CONFIG_FILE=$DIR_PROJECT"/"$3
+TEST_FILE=$DIR_PROJECT"/"$3
 Z3_BUILD_DIR=$4
 DATA_FILE=$PREFIX".ds"
 TEST_EXIST=$BUILD"/"$DATA_FILE
 if [ ! -f $TEST_EXIST ]; then
-	echo -e $red"There's something wrong in $TEST_EXIST"
+	echo -e $red$bold"There's something wrong in $TEST_EXIST"$normal$normal
 	exit 1
 fi
 
@@ -97,17 +98,17 @@ cd $DIR_PROJECT
 ####################################################
 # Generate add border node cpp and compile
 ####################################################
-IF_SELECTIVE=$(cat $CONFIG_FILE | grep "selective@" | cut -d"@" -f 2)
-DEGREE=$(cat $CONFIG_FILE | grep "degree@" | cut -d"@" -f 2)
-VARIABLES=($(cat $CONFIG_FILE | grep "names@" | cut -d"@" -f 2))
+IF_SELECTIVE=$(cat $TEST_FILE | grep "selective@" | cut -d"@" -f 2)
+DEGREE=$(cat $TEST_FILE | grep "degree@" | cut -d"@" -f 2)
+VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
-TYPES=($(cat $CONFIG_FILE | grep "types@" | cut -d"@" -f 2))
+TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
 EXTRACT_CONFIG="InitGenData/ExtractConfig.sh"
 ADD_BORDER_CPP=$BUILD"/"$PREFIX"_addBorder.cpp"
 ADD_BORDER_HEAD=$GEN_PROJECT"/MainHead"
 ADD_BORDER_MEDIUM=$GEN_PROJECT"/MainMedium"
 ADD_BORDER_TAIL=$GEN_PROJECT"/MainTail"
-./$EXTRACT_CONFIG $BUILD $CONFIG_FILE $ADD_BORDER_CPP
+./$EXTRACT_CONFIG $BUILD $TEST_FILE $ADD_BORDER_CPP
 cat $ADD_BORDER_HEAD >> $ADD_BORDER_CPP
 
 printf "\t\tvector<string> temp;\n" >> $ADD_BORDER_CPP
@@ -165,24 +166,24 @@ SVM_TRAIN="../../libsvm-3.24/svm-train"
 ###################################################
 # Initial Iteration
 ###################################################
-echo -e $red"-----------------svm-learner 1-------------------"$normal
-echo -e $blue"Reflacting data to dimention degree..."$normal
+echo -e $yellow"-----------------svm-learner 1-------------------"$normal
+echo -e -n "Reflacting data to dimention degree..."
 if [ -f $POLY_VAR_FILE ]; then
     rm $POLY_VAR_FILE
 fi
 if [ -f $POLY_DATA_FILE ]; then
     rm $POLY_DATA_FILE
 fi
-./$GEN_VARIABLES $CONFIG_FILE >> $POLY_VAR_FILE
+./$GEN_VARIABLES $TEST_FILE >> $POLY_VAR_FILE
 POLY_VAR=($(cat $POLY_VAR_FILE | cut -d"@" -f 2))
 POLY_VARNUM=${#POLY_VAR[@]}
 ./$GEN_DATA $DATA_FILE $DEGREE >> $POLY_DATA_FILE
 echo -e $green"[Done]"$normal
-echo -e $blue"Using libsvm-3.24 to train the model..."$normal
+echo -e -n "Using libsvm-3.24 to train the model..."
 ./$SVM_TRAIN -t 0 $POLY_DATA_FILE 1>/dev/null 2>&1
 echo -e $green"[Done]"$normal
 
-echo -e $blue"Calculating Hyperplane of the model..."$normal
+echo -e -n "Calculating Hyperplane of the model..."
 SVM_MODEL=$POLY_DATA_FILE".model"
 SVM_PARAMETER=$PREFIX".parameter"
 INVARIANT_FILE=$PREFIX".invariant"
@@ -190,16 +191,16 @@ SYMBOL_FILE=$PREFIX".symbol"
 if [ -f $SVM_PARAMETER ]; then
     rm $SVM_PARAMETER
 fi
-./$CALC_HYPERPLANE $SVM_MODEL $CONFIG_FILE >> $SVM_PARAMETER
+./$CALC_HYPERPLANE $SVM_MODEL $TEST_FILE >> $SVM_PARAMETER
 echo -e $green"[Done]"$normal
-echo -n -e $yellow"The hyperplane is : "$normal
+echo -n -e "The hyperplane is : "
 OutputHyperplane $SVM_PARAMETER $POLY_VAR_FILE $INVARIANT_FILE $POLY_DATA_FILE $SYMBOL_FILE
 
 ####################################################
 # Generate predict node cpp and compile
 ####################################################
 if [[ $IF_SELECTIVE -eq 1 ]]; then
-    echo -e $blue"Generating predict cpp file and compile..."$normal
+    echo -e -n "Generating predict cpp file and compile..."
     PREDICT_CPP=$PREFIX"_predict.cpp"
     PREDICT_HEAD=$GEN_PROJECT"/PredictHead"
     B=$(sed -n '1p' $SVM_PARAMETER)
@@ -295,7 +296,7 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
     g++ $PREDICT_CPP -o $PREDICT_NODE -lz3 -L$Z3_BUILD_DIR
     echo -e $green"[Done]"$normal
 
-    echo -e $blue"Predict border node according to the model..."$normal
+    echo -e "Predict border node according to the model..."
     SVM_PREDICT=$PREFIX".predict"
     ./$PREDICT_NODE >> $SVM_PREDICT
     echo -e $green"[Done]"$normal
@@ -310,11 +311,11 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
     iterator=2
     diff $SVM_BEFORE $SVM_PARAMETER > /dev/null
     IF_FILE_SAME=$?
-    echo -n -e $blue"Checking convergence..."$normal
+    echo -n -e "Checking convergence..."
     if [[ $IF_FILE_SAME == 0 ]]; then
         echo -e $yellow"[True]"$normal
     else
-        echo -e $yellow"[False]"$normal
+        echo -e $red"[False]"$normal
     fi
 
     while [[ $IF_FILE_SAME != 0 ]]
@@ -325,7 +326,7 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
         fi
         cp $SVM_PARAMETER $SVM_BEFORE
         # Add border node into DATA_FILE
-        echo -n -e $blue"Adding new border node into data file..."$normal
+        echo -n -e "Adding new border node into data file..."
         ./$ADD_BORDER_EXE $SVM_PREDICT $DATA_FILE >> $SVM_NEWNODE
         OutputBorderNode $SVM_NEWNODE
         cat $SVM_NEWNODE >> $DATA_FILE
@@ -341,24 +342,24 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
         rm $POLY_DATA_FILE
 
         # Begin the next iteration
-        echo -e $red"-----------------svm-learner $iterator-------------------"$normal
-        echo -e $blue"Reflacting data to dimention degree..."$normal
+        echo -e $yellow"-----------------svm-learner $iterator-------------------"$normal
+        echo -e -n "Reflacting data to dimention degree..."
         ./$GEN_DATA $DATA_FILE $DEGREE >> $POLY_DATA_FILE
         echo -e $green"[Done]"$normal
-        echo -e $blue"Using libsvm-3.24 to train the model..."$normal
+        echo -e -n "Using libsvm-3.24 to train the model..."
         ./$SVM_TRAIN -t 0 $POLY_DATA_FILE 1>/dev/null 2>&1
         echo -e $green"[Done]"$normal
 
-        echo -e $blue"Calculating Hyperplane of the model..."$normal
-        ./$CALC_HYPERPLANE $SVM_MODEL $CONFIG_FILE >> $SVM_PARAMETER
+        echo -e -n "Calculating Hyperplane of the model..."
+        ./$CALC_HYPERPLANE $SVM_MODEL $TEST_FILE >> $SVM_PARAMETER
         echo -e $green"[Done]"$normal
-        echo -n -e $yellow"The hyperplane is : "$normal
+        echo -n -e "The hyperplane is : "
         OutputHyperplane $SVM_PARAMETER $POLY_VAR_FILE $INVARIANT_FILE $POLY_DATA_FILE $SYMBOL_FILE
 
         ####################################################
         # Generate predict node cpp and compile
         ####################################################
-        echo -e $blue"Generating predict cpp file and compile..."$normal
+        echo -e -n "Generating predict cpp file and compile..."
 
         B=$(sed -n '1p' $SVM_PARAMETER)
         PARAMETERS=($(sed -n '2,$p' $SVM_PARAMETER))
@@ -445,18 +446,18 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
         g++ $PREDICT_CPP -o $PREDICT_NODE -lz3 -L$Z3_BUILD_DIR
         echo -e $green"[Done]"$normal
 
-        echo -e $blue"Predict border node according to the model..."$normal
+        echo -e -n "Predict border node according to the model..."
         ./$PREDICT_NODE >> $SVM_PREDICT
         echo -e $green"[Done]"$normal
 
         let iterator++
         diff $SVM_BEFORE $SVM_PARAMETER > /dev/null
         IF_FILE_SAME=$?
-        echo -n -e $blue"Checking convergence..."$normal
+        echo -n -e "Checking convergence..."
         if [[ $IF_FILE_SAME == 0 ]]; then
             echo -e $yellow"[True]"$normal
         else
-            echo -e $yellow"[False]"$normal
+            echo -e $red"[False]"$normal
         fi
     done
     rm $SVM_BEFORE
