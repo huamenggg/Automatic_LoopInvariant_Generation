@@ -31,15 +31,17 @@ OutputModelValue() {
     fi
 }
 
-if [ $# -lt 3 ]; then
+if [ $# -lt 4 ]; then
     echo -e $red"GenerateCpp.sh needs more parameters"$normal
-    echo -e $red"./GenerateCpp.sh build config_file prefix"$normal
+    echo -e $red"./GenerateCpp.sh build test_file prefix config_file"$normal
     exit 1
 fi
 
 BUILD=$1
 TEST_FILE=$2
 PREFIX=$3
+CONFIG_FILE=$4
+INITIAL_RANDOM_NUM=$(cat $CONFIG_FILE | grep "initialRandomNum:" | cut -d ":" -f 2)
 CPPFILE=$BUILD"/"$PREFIX".cpp"
 HEAD=$DIR_PROJECT"/Head"
 EXTRACT="InitGenData/ExtractConfig.sh"
@@ -127,8 +129,9 @@ printf "\tswitch(s.check()) {\n\t\tcase z3::unsat: return -1; break;\n\t\tcase z
 #---------------------------------------------
 # Using random to add more data
 #---------------------------------------------
+printf "\tint positiveSize = positiveSet.size();\n\tint negativeSize = negativeSet.size();\n" >> $CPPFILE
 printf "\tstruct timeb timeSeed;\n\tftime(&timeSeed);\n\tunsigned mileTime = timeSeed.time * 1000 + timeSeed.millitm;\n\tsrand(mileTime);\n" >> $CPPFILE
-printf "\n\twhile(positiveSet.empty() || negativeSet.empty()) {\n\t\tNode *p = new Node;\n" >> $CPPFILE
+printf "\n\twhile(positiveSet.empty() || negativeSet.empty() || (positiveSet.size() - positiveSize) < %s || (negativeSet.size() - negativeSize) < %s) {\n\t\tNode *p = new Node;\n" $INITIAL_RANDOM_NUM $INITIAL_RANDOM_NUM >> $CPPFILE
 
 for (( i=0; i<$VARNUM; i++  ));
 do

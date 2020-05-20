@@ -56,9 +56,9 @@ OutputModelValue() {
 
 DIR_PROJECT=$(pwd)
 
-if [ $# -lt 5 ]; then
+if [ $# -lt 4 ]; then
 	echo "sh VerifyInvariant.sh needs more parameters"
-	echo "sh VerifyInvariant.sh build prefix config_file z3_build_dir klee_include"
+	echo "sh VerifyInvariant.sh build prefix test_file config_file"
 	echo "try it again..."
 	exit 1
 fi
@@ -71,8 +71,9 @@ fi
 BUILD=$1
 PREFIX=$2
 TEST_FILE=$3
-Z3_BUILD_DIR=$4
-KLEE_INCLUDE=$5
+CONFIG_FILE=$4
+Z3_BUILD_DIR=$(cat $CONFIG_FILE | grep "z3Build:" | cut -d":" -f 2)
+KLEE_INCLUDE=$(cat $CONFIG_FILE | grep "kleeInclude:" | cut -d":" -f 2)
 PARAMETER_FILE=$BUILD"/"$PREFIX".parameter"
 SYMBOL_FILE=$BUILD"/"$PREFIX".symbol"
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"

@@ -1,0 +1,8 @@
+z3Build:/home/mh/Projects/z3/build 
+kleeInclude:/home/mh/klee/include
+degree:1
+selective:1
+interactive:0
+outputDetail:0
+initialRandomNum:0
+selectiveSampleNum:5

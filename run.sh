@@ -6,11 +6,11 @@ blue="\e[34m"
 normal="\e[0m"
 bold="\e[1m"
 
-DIR_PROJECT=$(cd $(dirname $BASH_SOURCE[0]) && pwd)
+DIR_PROJECT=$(pwd)
 
-if [ $# -lt 3 ]; then
+if [ $# -lt 1 ]; then
 	echo "sh run.sh needs more parameters"
-	echo "sh run.sh config_file z3_build_dir klee_include"
+	echo "sh run.sh test_file"
 	echo "try it again..."
 	exit 1
 fi
@@ -20,14 +20,14 @@ if [ ! -f $1 ]; then
 	exit 1
 fi
 
-IS_OUTPUT_DETAIL=0
 TEST_FILE=$1
-Z3_BUILD_DIR=$2
-KLEE_INCLUDE=$3
+CONFIG_FILE="config.json"
+IS_OUTPUT_DETAIL=$(cat $CONFIG_FILE | grep "outputDetail:" | cut -d":" -f 2)
+Z3_BUILD_DIR=$(cat $CONFIG_FILE | grep "z3Build:" | cut -d":" -f 2)
+INTERACTIVE=$(cat $CONFIG_FILE | grep "interactive:" | cut -d":" -f 2)
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
-INTERACTIVE=$(cat $TEST_FILE | grep "interactive@" | cut -d"@" -f 2)
 if [ -d $BUILD ]; then
     rm $BUILD -rf
 fi
@@ -41,7 +41,7 @@ if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
 else
     echo -e -n "Generating..."
 fi
-./InitGenData/GenerateCPP.sh $BUILD $TEST_FILE $PREFIX
+./InitGenData/GenerateCPP.sh $BUILD $TEST_FILE $PREFIX $CONFIG_FILE
 if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
     echo -e $green"[Done]"$normal
 fi
@@ -72,9 +72,9 @@ else
 fi
 
 if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
-    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE
 else
-    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR 1>/dev/null 2>&1
+    ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE 1>/dev/null 2>&1
 fi
 if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
     echo -e $green"[Done]"$normal
@@ -97,11 +97,12 @@ fi
 ##########################################################################
 if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
     echo -e "Verifying Invariant..."
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE
+    VERIFY_RESULT=$?
 else
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE 1>/dev/null 2>&1
+    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE 1>/dev/null 2>&1
+    VERIFY_RESULT=$?
 fi
-VERIFY_RESULT=$?
 if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
     echo -e $green"[Done]"$normal
 fi
@@ -153,9 +154,9 @@ do
         echo -n "..."
     fi
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
-        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR
+        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE
     else
-        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR 1>/dev/null 2>&1
+        ./GenerateInvariant/GenerateInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE 1>/dev/null 2>&1
     fi
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
         echo -e $green"[Done]"$normal
@@ -178,9 +179,12 @@ do
     ##########################################################################
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
         echo -e "Verifying Invariant..."
+        ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE
+        VERIFY_RESULT=$?
+    else
+        ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $CONFIG_FILE 1>/dev/null 2>&1
+        VERIFY_RESULT=$?
     fi
-    ./VerifyInvariant/VerifyInvariant.sh $BUILD $PREFIX $TEST_FILE $Z3_BUILD_DIR $KLEE_INCLUDE
-    VERIFY_RESULT=$?
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
         echo -e $green"[Done]"$normal
     fi
@@ -202,7 +206,12 @@ do
             echo -e $red$bold"The Invariant can't satisfies hoare triple"$normal$normal
         fi
         #add new border node
-        ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
+        if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
+            echo -e "Verifying Invariant..."
+            ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX
+        else
+            ./VerifyInvariant/AddBorderNode.sh $BUILD $PREFIX 1>/dev/null 2>&1
+        fi
         if [[ $INTERACTIVE -eq 1 ]]; then
             ./VerifyInvariant/UserAddNode.sh $BUILD $PREFIX $TEST_FILE
         fi

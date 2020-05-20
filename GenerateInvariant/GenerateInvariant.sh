@@ -54,7 +54,7 @@ OutputHyperplane() {
 
 if [ $# -lt 4 ]; then
 	echo "sh GenerateInvariant.sh needs more parameters"
-	echo "sh GenerateInvariant.sh BUILD PREFIX TEST_FILE Z3_BUILD_DIR"
+	echo "sh GenerateInvariant.sh BUILD PREFIX TEST_FILE CONFIG_FILE"
 	echo "try it again..."
 	exit 1
 fi
@@ -64,7 +64,10 @@ GEN_PROJECT=$DIR_PROJECT"/GenerateInvariant"
 BUILD=$1
 PREFIX=$2
 TEST_FILE=$DIR_PROJECT"/"$3
-Z3_BUILD_DIR=$4
+CONFIG_FILE=$4
+Z3_BUILD_DIR=$(cat $CONFIG_FILE | grep "z3Build:" | cut -d":" -f 2)
+IF_SELECTIVE=$(cat $CONFIG_FILE | grep "selective:" | cut -d":" -f 2)
+SELECTIVE_SAMPLE_NUM=$(cat $CONFIG_FILE | grep "selectiveSampleNum:" | cut -d":" -f 2)
 DATA_FILE=$PREFIX".ds"
 TEST_EXIST=$BUILD"/"$DATA_FILE
 if [ ! -f $TEST_EXIST ]; then
@@ -98,8 +101,7 @@ cd $DIR_PROJECT
 ####################################################
 # Generate add border node cpp and compile
 ####################################################
-IF_SELECTIVE=$(cat $TEST_FILE | grep "selective@" | cut -d"@" -f 2)
-DEGREE=$(cat $TEST_FILE | grep "degree@" | cut -d"@" -f 2)
+DEGREE=$(cat $CONFIG_FILE | grep "degree:" | cut -d":" -f 2)
 VARIABLES=($(cat $TEST_FILE | grep "names@" | cut -d"@" -f 2))
 VARNUM=${#VARIABLES[@]}
 TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
@@ -261,8 +263,8 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
         fi
         printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
     else
-        ## else generate 5 group sets by random
-        printf "\tfor(int m_i = 0;m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+        ## else generate config number group sets by random
+        printf "\tfor(int m_i = 0;m_i < %s;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" $SELECTIVE_SAMPLE_NUM >> $PREDICT_CPP
         ## generate random value of top n-1 variables
         for (( i=0; i<${VARNUM}-1; i++  ));
         do
@@ -415,8 +417,8 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
             fi
             printf "\t\t\tbreak;\n\t\t}\n\t\tcase z3::unknown: break;\n\t}\n\treturn 0;\n}\n" >> $PREDICT_CPP
         else
-            ## else generate 5 group sets by random
-            printf "\tfor(int m_i = 0; m_i < 5;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" >> $PREDICT_CPP
+            ## else generate config number group sets by random
+            printf "\tfor(int m_i = 0; m_i < %s;m_i++) {\n\t\ts.push();\n\t\tint valInt;\n\t\tdouble valDouble;\n\n" $SELECTIVE_SAMPLE_NUM >> $PREDICT_CPP
             ## generate random value of top n-1 variables
             for (( i=0; i<${VARNUM}-1; i++  ));
             do
