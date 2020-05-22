@@ -54,25 +54,6 @@ TYPES=($(cat $TEST_FILE | grep "types@" | cut -d"@" -f 2))
 PRECONDITION=$(cat $TEST_FILE | grep "precondition@" | cut -d"@" -f 2)
 
 #---------------------------------------------
-## Extract variables
-#---------------------------------------------
-VARS_FILE=$BUILD"/"$PREFIX".vars"
-if [ -f $VARS_FILE ]; then
-    rm $VARS_FILE
-fi
-printf "vars " >> $VARS_FILE
-for i in "${VARIABLES[@]}"
-do
-    printf "%s " $i >> $VARS_FILE
-done
-printf "\ntypes " >> $VARS_FILE
-for i in "${TYPES[@]}"
-do
-    printf "%s " $i >> $VARS_FILE
-done
-printf "\n" >> $VARS_FILE
-
-#---------------------------------------------
 ## Extract function from config file
 #---------------------------------------------
 ./$EXTRACT $BUILD $TEST_FILE $CPPFILE
