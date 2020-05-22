@@ -122,7 +122,7 @@ if [ $VERIFY_RESULT -eq 0 ]; then
     echo -e $green"------------------------------------------------"$normal
     endtime=$(date +%s)
     cost_time=$[ $endtime-$starttime ]
-    echo "Total run time : "$cost_time"s  | Total iteration times: " $ITERATION
+    echo -e "Total run time : "$bold$cost_time"s"$normal"  | Total iteration times: "$bold"1"$normal
     exit 0
 else
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
@@ -207,7 +207,7 @@ do
         echo -e $green"------------------------------------------------"$normal
         endtime=$(date +%s)
         cost_time=$[ $endtime-$starttime ]
-        echo "Total run time : "$cost_time"s  | Total iteration times: " $ITERATION
+        echo -e "Total run time : "$bold$cost_time"s"$normal"  | Total iteration times: "$bold$ITERATION$normal
         exit 0
     else
         if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
