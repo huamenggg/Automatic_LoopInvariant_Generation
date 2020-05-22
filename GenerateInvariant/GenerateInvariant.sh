@@ -68,6 +68,7 @@ CONFIG_FILE=$4
 Z3_BUILD_DIR=$(cat $CONFIG_FILE | grep "z3Build:" | cut -d":" -f 2)
 IF_SELECTIVE=$(cat $CONFIG_FILE | grep "selective:" | cut -d":" -f 2)
 SELECTIVE_SAMPLE_NUM=$(cat $CONFIG_FILE | grep "selectiveSampleNum:" | cut -d":" -f 2)
+ITERATION_TIMES=$(cat $CONFIG_FILE | grep "maxIterationTimes:" | cut -d":" -f 2)
 DATA_FILE=$PREFIX".ds"
 TEST_EXIST=$BUILD"/"$DATA_FILE
 if [ ! -f $TEST_EXIST ]; then
@@ -322,8 +323,8 @@ if [[ $IF_SELECTIVE -eq 1 ]]; then
 
     while [[ $IF_FILE_SAME != 0 ]]
     do
-        if [ $iterator -ge 128 ]; then
-            echo -e $red$bold"The iteration times are more than 128, end the process"$normal$normal
+        if [ $iterator -ge $ITERATION_TIMES ]; then
+            echo -e $red$bold"The iteration times are more than "$ITERATION_TIMES", end the process"$normal$normal
             exit -1
         fi
         cp $SVM_PARAMETER $SVM_BEFORE

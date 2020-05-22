@@ -27,6 +27,7 @@ CONFIG_FILE="config.json"
 IS_OUTPUT_DETAIL=$(cat $CONFIG_FILE | grep "outputDetail:" | cut -d":" -f 2)
 Z3_BUILD_DIR=$(cat $CONFIG_FILE | grep "z3Build:" | cut -d":" -f 2)
 INTERACTIVE=$(cat $CONFIG_FILE | grep "interactive:" | cut -d":" -f 2)
+ITERATION_TIMES=$(cat $CONFIG_FILE | grep "maxIterationTimes:" | cut -d":" -f 2)
 PREFIX=`basename -s .cfg $1`
 BUILD=$DIR_PROJECT"/Build/"$PREFIX
 INVARIANT_FILE=$BUILD"/"$PREFIX".invariant"
@@ -146,8 +147,8 @@ fi
 ITERATION=2
 while [ $VERIFY_RESULT -ne 0 ]
 do
-    if [ $ITERATION -ge 128 ]; then
-        echo $red$bold"The iteration times are more than 128, end the process"$normal$normal
+    if [ $ITERATION -ge $ITERATION_TIMES ]; then
+        echo $red$bold"The iteration times are more than "$ITERATION_TIMES", end the process"$normal$normal
         exit -1
     fi
     ##########################################################################
