@@ -8,7 +8,7 @@ bold="\e[1m"
 
 DIR_PROJECT=$(pwd)
 
-starttime=$(data + %s)
+starttime=$(date +%s)
 
 if [ $# -lt 1 ]; then
 	echo "sh run.sh needs more parameters"
@@ -120,9 +120,9 @@ if [ $VERIFY_RESULT -eq 0 ]; then
     OUTPUT_INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
     echo -e $bold"$OUTPUT_INVARIANT"$normal
     echo -e $green"------------------------------------------------"$normal
-    endtime=$(data + %s)
-    cost_time=$[ "nd_time-$start_time ]" ]
-    echo "run time : "$cost_time"s"
+    endtime=$(date +%s)
+    cost_time=$[ $endtime-$starttime ]
+    echo "Total run time : "$cost_time"s  | Total iteration times: " $ITERATION
     exit 0
 else
     if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
@@ -205,6 +205,9 @@ do
         OUTPUT_INVARIANT=$(sed -n '1p' $INVARIANT_FILE)
         echo -e $bold"$OUTPUT_INVARIANT"$normal
         echo -e $green"------------------------------------------------"$normal
+        endtime=$(date +%s)
+        cost_time=$[ $endtime-$starttime ]
+        echo "Total run time : "$cost_time"s  | Total iteration times: " $ITERATION
         exit 0
     else
         if [ $IS_OUTPUT_DETAIL -eq 1 ]; then
