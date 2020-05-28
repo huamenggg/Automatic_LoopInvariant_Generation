@@ -1,6 +1,12 @@
-Firstly need to install libsvm and make successfully.
-Secondly, needs to install clang and klee.
-Lastly, run ./run.sh Config_file klee_include_path(absolute path)
+## MIG Tutorial
 
-##### Because klee_assume can't support double type, the precondition, loopcondition limited to int.
-Because the limitation of shell, the spare space won't allowed
+#### environment
+1. KLEE (need update klee include dir path in config.json)
+2. Z3 (need update z3 build dir path in config.json)
+3. LIBSVM (download and compile successfully, then move to the top dir of MIG, for example, InvariantGeneration/libsvm-3.24/)
+
+#### Run command
+./run.sh test_file
+
+for example:
+./run.sh Benchmark/01
