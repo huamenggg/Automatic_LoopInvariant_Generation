@@ -4,6 +4,3 @@ precondition@x==0 && n>0
 loopcondition@x<n
 loop@x++;
 postcondition@x==n
-degree@1
-selective@1
-interactive@0

@@ -4,6 +4,3 @@ precondition@x>=10
 loopcondition@(x>=10) && (x<20) 
 loop@ x=x+2;
 postcondition@x>=20
-degree@1
-selective@1
-interactive@0

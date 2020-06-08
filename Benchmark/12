@@ -4,6 +4,3 @@ precondition@x == 0 && y > 0
 loopcondition@x < y
 loop@x++;
 postcondition@x==y
-degree@1
-selective@1
-interactive@0

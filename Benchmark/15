@@ -1,9 +1,6 @@
 names@i n sum
 types@int int int
-precondition@i==0 && n>=0 && n<=100 && sum==0
+precondition@i==0 && n>=0 && n<=10
 loopcondition@i<n
-loop@sum = sum + i; i++;
-postcondition@sum>=0
-degree@1
-selective@0
-interactive@0
+loop@sum++; i++;
+postcondition@i>=0

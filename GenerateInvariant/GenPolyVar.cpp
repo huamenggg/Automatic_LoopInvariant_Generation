@@ -49,14 +49,14 @@ void GeneratePolyVars(int degree, const vector<string> &variables, vector<vector
 }
 
 int main(int argc, char** argv) {
-    if(argc < 2) {
+    if(argc < 3) {
         cerr << "GeneratePolynomial.cpp needs more paramters" << endl;
-        cerr << "./outputHyperplane config_file" << endl;
+        cerr << "./outputHyperplane test_file degree" << endl;
         exit(-1);
     }
-    ifstream configFile;
-    configFile.open(argv[1], ios::out | ios::in);
-    if(!configFile) {
+    ifstream testFile;
+    testFile.open(argv[1], ios::out | ios::in);
+    if(!testFile) {
         cerr << "Can't open " << argv[1] << endl;
         exit(-1);
     }
@@ -64,12 +64,12 @@ int main(int argc, char** argv) {
     string line;
     vector<string> variables;
     int degree;
-    while(getline(configFile, line)) {
+    degree = stoi(argv[2]);
+    while(getline(testFile, line)) {
         vector<string> res = Split(line, "@");
         if(res[0] == "names") {
             variables = Split(res[1], " ");
         }
-        else if(res[0] == "degree") degree = stoi(res[1]);
     }
 
     vector<vector<vector<string>>> polyVars;

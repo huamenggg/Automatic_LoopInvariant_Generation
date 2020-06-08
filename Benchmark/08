@@ -4,6 +4,3 @@ precondition@i>=0 && i<=200
 loopcondition@i>0
 loop@i--;
 postcondition@i>=0
-degree@1
-selective@1
-interactive@0

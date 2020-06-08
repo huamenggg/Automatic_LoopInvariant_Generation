@@ -3,7 +3,4 @@ types@int int
 precondition@n>=1 && k>n
 loopcondition@n<k
 loop@n++; k--;
-postcondition@k>=0
-degree@1
-selective@0
-interactive@0
+postcondition@n+k>=0

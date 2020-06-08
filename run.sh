@@ -148,7 +148,7 @@ ITERATION=2
 while [ $VERIFY_RESULT -ne 0 ]
 do
     if [ $ITERATION -ge $ITERATION_TIMES ]; then
-        echo $red$bold"The iteration times are more than "$ITERATION_TIMES", end the process"$normal$normal
+        echo -e $red$bold"The iteration times are more than "$ITERATION_TIMES", end the process"$normal$normal
         exit -1
     fi
     ##########################################################################

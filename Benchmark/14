@@ -1,9 +1,6 @@
 names@i k
 types@int int
 precondition@0 <= k && k <= 1 && i == 1
-loopcondition@i < 1000
-loop@i = i + 1;k = k - 1;
-postcondition@1 <= i + k && i + k <= 2 && i >= 1
-degree@1
-selective@1
-interactive@0
+loopcondition@i < 10
+loop@i++;k--;
+postcondition@i + k <= 2
